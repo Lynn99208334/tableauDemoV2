@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8"/>
+    <title>Tableau × Spring Boot Demo</title>
+
+    <!-- 官方 Embedding API v3（用 <tableau-viz> Web Component） -->
+    <script type="module"
+            src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+
+    <style>
+        body { font-family: system-ui, -apple-system, "Noto Sans TC", Arial, sans-serif; margin: 24px; }
+        .wrap { max-width: 1200px; margin: 0 auto; }
+        #viz { width: 100%; height: 800px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Tableau 視覺化</h1>
+
+    <!-- 把 src 換成你的實際儀表板分享網址；先用 Public 範例測通路 -->
+    <tableau-viz id="viz"
+                 src="https://public.tableau.com/views/Superstore_embedded_800x800/Overview"
+                 toolbar="bottom"
+                 hide-tabs>
+    </tableau-viz>
+
+    <!-- 若要在載入後呼叫 API（如篩選器/參數），可以用下面這段。先留著備用 -->
+    <script type="module">
+        // const viz = document.getElementById('viz');
+        // await viz.whenLoaded();
+        // // 範例：設定參數、觸發過濾（等你有自己的 view 再玩）
+    </script>
+</div>
+</body>
+</html>
