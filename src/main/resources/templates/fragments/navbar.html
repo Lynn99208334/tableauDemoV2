@@ -48,6 +48,19 @@
                 Dashboard
             </a>
 
+            <div class="sb-sidenav-menu-heading">開發</div>
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDevTestArea" aria-expanded="false" aria-controls="collapseDevTestArea">
+                <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                測試區
+                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+            </a>
+            <div class="collapse" id="collapseDevTestArea" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                <nav class="sb-sidenav-menu-nested nav">
+                    <a class="nav-link" th:href="@{/bankSetting}">銀行基本設定</a>
+                    <a class="nav-link" th:href="@{/ccSettingTest}">信用卡帳單測試</a>
+                </nav>
+            </div>
+
             <div class="sb-sidenav-menu-heading">Interface</div>
             <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                 <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
@@ -62,6 +75,11 @@
             </div>
 
             <div class="sb-sidenav-menu-heading">功能區</div>
+            <a class="nav-link" th:href="@{/ccTest}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                信用卡功能測試
+            </a>
+
             <a class="nav-link" th:href="@{/ccAnalysis}">
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                 信用卡分析

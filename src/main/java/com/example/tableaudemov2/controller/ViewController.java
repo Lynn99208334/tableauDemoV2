@@ -4,7 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class WebController {
+public class ViewController {
 
     @GetMapping("/")            // 首頁
     public String index() { return "index"; }      // 對應 templates/index.html
@@ -18,9 +18,13 @@ public class WebController {
     @GetMapping("/ccAnalysis")
     public String ccAnalysis() { return "ccAnalysis"; }    // 對應 templates/tables.html
 
-//    // http://localhost:8080/dashboard
-//    @GetMapping("/dashboard")
-//    public String dashboard() {
-//        return "dashboard"; // 對應 templates/dashboard.html
-//    }
+    @GetMapping("/ccTest")
+    public String ccTest() { return "ccTest"; }    // 對應 templates/tables.html
+
+    //開發
+    @GetMapping("/bankSetting")
+    public String bankSetting() { return "bankSetting"; }
+
+    @GetMapping("/ccSettingTest")
+    public String ccSettingTest() { return "ccSettingTest"; }
 }
