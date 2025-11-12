@@ -1,0 +1,20 @@
+{
+  "name": "tableaudemov2",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Frontend vendor bundling for SweetAlert2 / SockJS / STOMP with pinned versions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lynn99208334/tableauDemoV2.git"
+  },
+  "dependencies": {
+    "sweetalert2": "11.10.6",
+    "sockjs-client": "1.6.1",
+    "@stomp/stompjs": "7.0.0"
+  },
+  "scripts": {
+    "postinstall": "node copy-vendors.js",
+    "vendors:copy": "node copy-vendors.js"
+  }
+}

@@ -6,6 +6,12 @@
 </head>
 <body>
 
+<!-- ── Vendor CSS（放進 <head> 用） ───────────────────────── -->
+<th:block th:fragment="vendor-css">
+    <link rel="stylesheet" href="/css/vendor/sweetalert2.v11.10.6.min.css"/>
+</th:block>
+
+
 <!-- ── Top Navbar ───────────────────────────────────────────── -->
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark" th:fragment="topnav">
     <!-- Brand -->
@@ -75,10 +81,10 @@
             </div>
 
             <div class="sb-sidenav-menu-heading">功能區</div>
-            <a class="nav-link" th:href="@{/ccTest}">
-                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
-                信用卡功能測試
-            </a>
+<!--            <a class="nav-link" th:href="@{/ccTest}">-->
+<!--                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>-->
+<!--                信用卡功能測試-->
+<!--            </a>-->
 
             <a class="nav-link" th:href="@{/ccAnalysis}">
                 <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
@@ -101,6 +107,14 @@
         Start Bootstrap
     </div>
 </nav>
+
+<!-- ── Vendor JS（放在 </body> 前用） ─────────────────────── -->
+<th:block th:fragment="vendor-js">
+    <!-- 若全站都需要 WebSocket / Alert，就在主版載入；否則把 sockjs/stomp 移到特定頁面 -->
+    <script defer src="/js/vendor/sockjs.v1.6.1.min.js"></script>
+    <script defer src="/js/vendor/stomp.umd.v7.0.0.min.js"></script>
+    <script defer src="/js/vendor/sweetalert2.all.v11.10.6.min.js"></script>
+</th:block>
 
 </body>
 </html>
