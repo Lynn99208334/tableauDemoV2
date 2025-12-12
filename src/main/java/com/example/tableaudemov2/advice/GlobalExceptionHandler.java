@@ -26,14 +26,23 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest req
+    ) {
 
         StringBuilder sb = new StringBuilder();
         ex.getBindingResult().getFieldErrors().forEach(err ->
                 sb.append(err.getField()).append(": ").append(err.getDefaultMessage()).append("; ")
         );
 
-        ApiErrorResponse error = buildError(req, ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, sb.toString());
+        ApiErrorResponse error = buildError(
+                req,
+                ErrorCode.VALIDATION_ERROR,
+                HttpStatus.BAD_REQUEST,
+                sb.toString()
+        );
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
