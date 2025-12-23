@@ -11,9 +11,10 @@ class TableauDemoV2ApplicationTests {
     void contextLoads() {
     }
 
+    //手動重設密碼
     @Test
     void forgetPassword() {
-        System.out.println(new BCryptPasswordEncoder().encode("Test1234!"));
+        System.out.println(new BCryptPasswordEncoder().encode("123456"));
     }
 
 }

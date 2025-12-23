@@ -21,9 +21,13 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                //關掉 Spring Security 預設 logout
+                .logout(logout -> logout.disable())
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login",
+                                "/logout",   // 明確允許
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
