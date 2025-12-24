@@ -18,21 +18,39 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+
+                // ✅ 表單登入要用 SESSION（先不要 JWT）
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
-                //關掉 Spring Security 預設 logout
-                .logout(logout -> logout.disable())
+
+                // ✅ 關掉 httpBasic
+                // ❌ .httpBasic()
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login",
-                                "/logout",   // 明確允許
-                                "/error"
+                                "/error",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(); // TEMP: for testing only
+
+                // ✅ 啟用表單登入
+                .formLogin(form -> form
+                        .loginPage("/login")              // GET → login.html
+                        .loginProcessingUrl("/login")    // POST → Spring Security
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/login?error")
+                        .permitAll()
+                )
+
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                );
 
         return http.build();
     }
