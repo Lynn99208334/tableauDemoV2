@@ -25,6 +25,16 @@ public class JpaUserDetailsService implements UserDetailsService {
                         new UsernameNotFoundException("User not found: " + email)
                 );
 
+        // ✅ 關鍵：登入時擋未完成 Email 驗證的帳號
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new RuntimeException("EMAIL_NOT_VERIFIED");
+        }
+
+        // （選擇性）如果你未來有停權狀態
+        // if (user.getStatus() != UserStatus.ACTIVE) {
+        //     throw new RuntimeException("ACCOUNT_NOT_ACTIVE");
+        // }
+
         return new SecurityUser(user);
     }
 }

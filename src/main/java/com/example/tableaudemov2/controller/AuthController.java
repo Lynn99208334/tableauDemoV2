@@ -1,11 +1,17 @@
 package com.example.tableaudemov2.controller;
+
+import com.example.tableaudemov2.dto.RegisterRequest;
 import com.example.tableaudemov2.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -34,5 +40,13 @@ public class AuthController {
             return bearer.substring(7);
         }
         return null;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+
+        authService.register(request);
+
+        return ResponseEntity.ok().build();
     }
 }
