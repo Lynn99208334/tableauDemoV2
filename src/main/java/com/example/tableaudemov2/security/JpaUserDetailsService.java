@@ -2,6 +2,7 @@ package com.example.tableaudemov2.security;
 
 import com.example.tableaudemov2.entity.User;
 import com.example.tableaudemov2.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,6 +12,9 @@ import org.springframework.stereotype.Service;
 public class JpaUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+
+    @Value("${app.auth.skip-email-verify:false}")
+    private boolean skipEmailVerify;
 
     public JpaUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -24,9 +28,8 @@ public class JpaUserDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found: " + email)
                 );
-
         // ✅ 關鍵：登入時擋未完成 Email 驗證的帳號
-        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+        if (!skipEmailVerify && !Boolean.TRUE.equals(user.getEmailVerified())) {
             throw new RuntimeException("EMAIL_NOT_VERIFIED");
         }
 
