@@ -26,16 +26,23 @@ public enum ErrorCode {
     EMAIL_TOKEN_INVALID("AUTH_002", "Invalid Email Verification Token"),
     EMAIL_TOKEN_EXPIRED("AUTH_003", "Email Verification Token Expired"),
     EMAIL_ALREADY_VERIFIED("AUTH_004", "Email Already Verified"),
+    EMAIL_RESEND_TOO_FREQUENT("AUTH_005", "Verification email sent too frequently"),
+    USER_NOT_FOUND("AUTH_006", "User Not Found"),
+    USERNAME_ALREADY_EXISTS("AUTH_007", "Username Already Exists"),
 
+
+    // ===== Email Verification =====
     EMAIL_ALREADY_EXISTS("AUTH_011", "Email Already Exists"),
-    USERNAME_ALREADY_EXISTS("AUTH_012", "Username Already Exists"),
-    USER_NOT_FOUND("AUTH_013", "User Not Found"),
+    EMAIL_VERIFY_TOKEN_INVALID("AUTH_012", "Email Verification Token Invalid"),
+    EMAIL_VERIFY_TOKEN_EXPIRED("AUTH_013", "Email Verification Token Expired"),
+
 
     ACCOUNT_DISABLED("AUTH_020", "Account Disabled"),
     ACCOUNT_NOT_ACTIVE("AUTH_021", "Account Not Active"),
 
     LOGIN_FAILED("AUTH_030", "Login Failed"),
     LOGOUT_FAILED("AUTH_031", "Logout Failed");
+
 
     private final String code;
     private final String message;

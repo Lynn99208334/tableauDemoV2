@@ -1,6 +1,7 @@
 package com.example.tableaudemov2.controller;
 
 import com.example.tableaudemov2.dto.RegisterRequest;
+import com.example.tableaudemov2.dto.ResendVerificationRequest;
 import com.example.tableaudemov2.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -59,4 +60,18 @@ public class AuthController {
                 "message", "Email 驗證成功，請重新登入"
         ));
     }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerificationEmail(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+
+        authService.resendVerificationEmail(request.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Verification email resent"
+        ));
+    }
+
 }
