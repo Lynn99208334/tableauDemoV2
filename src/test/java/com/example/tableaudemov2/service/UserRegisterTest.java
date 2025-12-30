@@ -1,50 +1,47 @@
 package com.example.tableaudemov2.service;
 
 import com.example.tableaudemov2.entity.User;
+import com.example.tableaudemov2.enums.ErrorCode;
+import com.example.tableaudemov2.exception.BusinessException;
 import com.example.tableaudemov2.repository.UserRepository;
 import com.example.tableaudemov2.security.JpaUserDetailsService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.ActiveProfiles;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import java.util.Optional;
 
-@SpringBootTest
-@ActiveProfiles("test")
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 class UserRegisterTest {
 
-    @Autowired
-    private JpaUserDetailsService userDetailsService;
-
-    @Autowired
+    @Mock
     private UserRepository userRepository;
 
-    @BeforeEach
-    void setUp() {
-        userRepository.deleteAll();
-
-        User user = new User();
-        user.setUsername("Test");
-        user.setEmail("test@example.com");
-        user.setPassword("123456");
-        user.setEmailVerified(false); // ❗故意不驗證
-        userRepository.save(user);
-    }
+    @InjectMocks
+    private JpaUserDetailsService userDetailsService;
 
     @Test
-    void test_login_success_even_if_email_not_verified_in_test_profile() {
+    void should_throw_exception_when_email_not_verified() {
 
-        // when / then
-        assertDoesNotThrow(() -> {
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername("test@example.com");
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setPassword("123456");
+        user.setEmailVerified(false);
 
-            assertThat(userDetails).isNotNull();
-            assertThat(userDetails.getUsername()).isEqualTo("test@example.com");
-        });
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(user));
+
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> userDetailsService.loadUserByUsername("test@example.com")
+        );
+
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 }
