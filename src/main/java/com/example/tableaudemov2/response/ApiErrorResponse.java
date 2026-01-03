@@ -1,4 +1,4 @@
-package com.example.tableaudemov2.exception;
+package com.example.tableaudemov2.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

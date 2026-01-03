@@ -1,7 +1,6 @@
 package com.example.tableaudemov2.security;
 
 import com.example.tableaudemov2.exception.ApiErrorResponse;
-import com.example.tableaudemov2.enums.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

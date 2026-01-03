@@ -1,7 +1,6 @@
 package com.example.tableaudemov2.security;
 
 import com.example.tableaudemov2.entity.User;
-import com.example.tableaudemov2.enums.ErrorCode;
 import com.example.tableaudemov2.exception.BusinessException;
 import com.example.tableaudemov2.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,6 +1,5 @@
 package com.example.tableaudemov2.advice;
 
-import com.example.tableaudemov2.enums.ErrorCode;
 import com.example.tableaudemov2.exception.ApiErrorResponse;
 import com.example.tableaudemov2.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;

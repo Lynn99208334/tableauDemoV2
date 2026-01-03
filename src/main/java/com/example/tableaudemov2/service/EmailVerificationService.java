@@ -1,7 +1,6 @@
 package com.example.tableaudemov2.service;
 
 import com.example.tableaudemov2.entity.User;
-import com.example.tableaudemov2.enums.ErrorCode;
 import com.example.tableaudemov2.exception.BusinessException;
 import com.example.tableaudemov2.repository.UserRepository;
 import com.example.tableaudemov2.util.TimeProvider;
