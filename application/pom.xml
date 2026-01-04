@@ -24,20 +24,19 @@
         <spring-boot.version>3.5.7</spring-boot.version>
     </properties>
 
-    <!-- ✅ 關鍵：Spring Boot 版本管理 -->
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
+        <!-- Internal Modules -->
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>auth</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>finance-core</artifactId>
+        </dependency>
+
+
         <!-- Spring Boot 基礎 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

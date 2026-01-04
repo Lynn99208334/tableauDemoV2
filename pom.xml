@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>shared-kernel</module>
+        <module>common</module>
         <module>auth</module>
         <module>finance-core</module>
         <module>application</module>
@@ -29,9 +29,18 @@
     <!-- ✅ 正確位置：dependencyManagement -->
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Boot BOM：只負責版本 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <dependency>
                 <groupId>com.example</groupId>
-                <artifactId>shared-kernel</artifactId>
+                <artifactId>common</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
