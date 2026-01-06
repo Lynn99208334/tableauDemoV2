@@ -1,15 +1,16 @@
 package com.example.tableaudemov2.service;
 
+import com.example.tableaudemov2.common.exception.BusinessException;
+import com.example.tableaudemov2.common.exception.ErrorCode;
 import com.example.tableaudemov2.entity.User;
-import com.example.tableaudemov2.exception.BusinessException;
 import com.example.tableaudemov2.repository.UserRepository;
 import com.example.tableaudemov2.util.TimeProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -29,7 +30,7 @@ class EmailVerificationServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private TimeProvider timeProvider;
 
     /**
