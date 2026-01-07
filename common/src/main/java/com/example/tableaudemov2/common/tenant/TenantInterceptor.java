@@ -51,7 +51,6 @@ public class TenantInterceptor implements HandlerInterceptor {
         return true;
     }
 
-
     @Override
     public void afterCompletion(
             HttpServletRequest request,
