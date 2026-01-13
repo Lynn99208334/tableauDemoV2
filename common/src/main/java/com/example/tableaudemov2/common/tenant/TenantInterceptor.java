@@ -12,7 +12,6 @@ import java.util.List;
 public class TenantInterceptor implements HandlerInterceptor {
     // 定義 bypass 路徑清單
     private static final List<String> BYPASS_PATHS = List.of(
-            "/",
             "/index",
             "/login",
             "/auth/login",

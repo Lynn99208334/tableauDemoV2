@@ -1,4 +1,4 @@
-package com.example.tableaudemov2.common.config;
+package com.example.tableaudemov2.config;
 
 import com.example.tableaudemov2.common.tenant.TenantInterceptor;
 import org.springframework.context.annotation.Configuration;
