@@ -33,6 +33,7 @@ public class SecurityConfig {
                                 "/register",
                                 "/api/auth/verify-email",
                                 "/api/auth/resend-verification",
+                                "/api/debug/**",
                                 "/error",
                                 "/css/**",
                                 "/js/**",
