@@ -36,6 +36,11 @@
             <artifactId>finance-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>health</artifactId>
+        </dependency>
+
 
         <!-- Spring Boot 基礎 -->
         <dependency>
