@@ -20,6 +20,8 @@ public class TenantInterceptor implements HandlerInterceptor {
             "/index",
             "/login",
             "/register",
+            "/api/auth/register",
+            "/api/auth/login",
             "/auth/login",
             "/css/",
             "/js/",

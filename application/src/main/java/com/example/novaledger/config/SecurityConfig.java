@@ -60,7 +60,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/v3/api-docs"        // ← 加這行，不帶 **
+                                "/v3/api-docs",
+                                "/api/auth/register",
+                                "/api/auth/login"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

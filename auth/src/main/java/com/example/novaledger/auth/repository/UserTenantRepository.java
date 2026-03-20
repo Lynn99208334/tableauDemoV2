@@ -16,4 +16,6 @@ public interface UserTenantRepository extends JpaRepository<UserTenant, Long> {
     Optional<UserTenant> findByUserIdAndTenantIdAndStatus(Long userId, Long tenantId, UserTenantStatus status);
 
     boolean existsByUserIdAndTenantIdAndStatus(Long userId, Long tenantId, UserTenantStatus status);
+
+    Optional<UserTenant> findFirstByUserIdAndStatus(Long userId, UserTenantStatus status);
 }
