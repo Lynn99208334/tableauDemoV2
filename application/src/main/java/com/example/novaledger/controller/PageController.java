@@ -1,6 +1,6 @@
 package com.example.novaledger.controller;
 
-import com.example.novaledger.dto.RegisterRequest;
+import com.example.novaledger.auth.dto.RegisterRequest;
 import com.example.novaledger.service.AuthService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
