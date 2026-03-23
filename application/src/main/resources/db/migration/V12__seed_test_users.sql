@@ -5,7 +5,7 @@
 --
 -- 所有帳號密碼均為：password123
 -- bcrypt hash (cost=10)：
---   $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi
+--   $2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C
 -- ========================================
 
 SET NAMES utf8mb4;
@@ -26,7 +26,7 @@ INSERT INTO USERS (
 (
     'sys_admin',
     'admin@novaledger.dev',
-    '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',
+    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     TRUE, NULL,
@@ -36,7 +36,7 @@ INSERT INTO USERS (
 (
     'alice',
     'alice@novaledger.dev',
-    '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',
+    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     FALSE, NULL,
@@ -46,7 +46,7 @@ INSERT INTO USERS (
 (
     'bob',
     'bob@novaledger.dev',
-    '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',
+    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     FALSE, NULL,

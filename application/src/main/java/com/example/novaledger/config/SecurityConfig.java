@@ -28,7 +28,12 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs",
-            "/v3/api-docs/**"
+            "/v3/api-docs/**",
+            "/css/**",
+            "/js/**",
+            "/images/**",
+            "/fonts/**",
+            "/favicon.ico"
     };
 
     @Bean
@@ -36,11 +41,20 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/page/login")
+                        .defaultSuccessUrl("/page/dashboard", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/page/login?logout")
+                        .permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
