@@ -1,21 +1,23 @@
 package com.example.novaledger.service;
 
-import com.example.novaledger.adapter.cache.RedisCacheAdapter;
-import com.example.novaledger.common.exception.BusinessException;
-import com.example.novaledger.common.exception.ErrorCode;
-import com.example.novaledger.dto.RegisterRequest;
 import com.example.novaledger.auth.entity.User;
 import com.example.novaledger.auth.enums.UserStatus;
+import com.example.novaledger.auth.jwt.JwtTokenProvider;
 import com.example.novaledger.auth.repository.UserRepository;
-import com.example.novaledger.util.JwtUtil;
+import com.example.novaledger.auth.repository.UserTenantRepository;
+import com.example.novaledger.common.exception.BusinessException;
+import com.example.novaledger.common.exception.ErrorCode;
+import com.example.novaledger.dto.AuthResponse;
+import com.example.novaledger.dto.LoginRequest;
+import com.example.novaledger.dto.RegisterRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.novaledger.auth.entity.UserTenant;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -23,40 +25,22 @@ import java.util.UUID;
 @Transactional
 public class AuthService {
 
-    private final RedisCacheAdapter redisCacheAdapter;
-    private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserTenantRepository userTenantRepository;
     @Value("${app.auth.resend-cooldown-seconds:60}")
     private long resendCooldownSeconds;
 
-    public AuthService(RedisCacheAdapter redisCacheAdapter,
-                       JwtUtil jwtUtil,
-                       UserRepository userRepository,
-                       PasswordEncoder passwordEncoder, EmailService emailService) {
-        this.redisCacheAdapter = redisCacheAdapter;
-        this.jwtUtil = jwtUtil;
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder, EmailService emailService, JwtTokenProvider jwtTokenProvider, UserTenantRepository userTenantRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
-    }
-
-    // ========================
-    // 登出（JWT Blacklist）
-    // ========================
-    public void logout(String jwt) {
-        log.info(">>> AuthService.logout called");
-
-        String jti = jwtUtil.getJti(jwt);
-        Date expiration = jwtUtil.getExpiration(jwt);
-
-        long ttlMillis = expiration.getTime() - System.currentTimeMillis();
-        log.info("Put blacklist jti={}, ttl={}", jti, ttlMillis);
-
-        if (ttlMillis > 0) {
-            redisCacheAdapter.putBlacklistJti(jti, ttlMillis);
-        }
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.userTenantRepository = userTenantRepository;
     }
 
     // ========================
@@ -97,103 +81,38 @@ public class AuthService {
         emailService.sendVerifyEmail(user.getEmail(), verifyLink);
     }
 
+    public AuthResponse login(LoginRequest request) {
 
-//    public void verifyEmail(String token) {
-//
-//        User user = userRepository.findByEmailVerifyToken(token)
-//                .orElseThrow(() ->
-//                        new BusinessException(
-//                                ErrorCode.EMAIL_VERIFY_TOKEN_INVALID.getMessage(),
-//                                ErrorCode.EMAIL_VERIFY_TOKEN_INVALID,
-//                                HttpStatus.BAD_REQUEST
-//                        )
-//                );
-//
-//        // 1️⃣ 已驗證過（防重複點）
-//        if (Boolean.TRUE.equals(user.getEmailVerified())) {
-//            throw new BusinessException(
-//                    ErrorCode.EMAIL_ALREADY_VERIFIED.getMessage(),
-//                    ErrorCode.EMAIL_ALREADY_VERIFIED,
-//                    HttpStatus.BAD_REQUEST
-//            );
-//        }
-//
-//        // 2️⃣ token 過期判斷（重點）
-//        if (user.getEmailVerifyExpiredAt() == null ||
-//                user.getEmailVerifyExpiredAt().isBefore(LocalDateTime.now())) {
-//
-//            throw new BusinessException(
-//                    ErrorCode.EMAIL_VERIFY_TOKEN_EXPIRED.getMessage(),
-//                    ErrorCode.EMAIL_VERIFY_TOKEN_EXPIRED,
-//                    HttpStatus.BAD_REQUEST
-//            );
-//        }
-//
-//        // 3️⃣ 驗證成功 → 更新狀態
-//        user.setEmailVerified(true);
-//        user.setVerifiedAt(LocalDateTime.now());
-//        user.setEmailVerifyToken(null);
-//        user.setEmailVerifyExpiredAt(null);
-//
-//        userRepository.save(user);
-//    }
-//
-//    public void resendVerificationEmail(String email) {
-//
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() ->
-//                        new BusinessException(
-//                                ErrorCode.USER_NOT_FOUND.getMessage(),
-//                                ErrorCode.USER_NOT_FOUND,
-//                                HttpStatus.BAD_REQUEST
-//                        )
-//                );
-//
-//        if (Boolean.TRUE.equals(user.getEmailVerified())) {
-//            throw new BusinessException(
-//                    ErrorCode.EMAIL_ALREADY_VERIFIED.getMessage(),
-//                    ErrorCode.EMAIL_ALREADY_VERIFIED,
-//                    HttpStatus.BAD_REQUEST
-//            );
-//        }
-//
-//        // 限制重發頻率
-//        System.out.println("resendCooldownSeconds=" + resendCooldownSeconds);
-//        System.out.println("user.getEmailVerifyExpiredAt()=" + user.getEmailVerifyExpiredAt());
-//        if (resendCooldownSeconds > 0 && user.getEmailVerifyExpiredAt() != null) {
-//            LocalDateTime lastSendTime =
-//                    user.getEmailVerifyExpiredAt().minusMinutes(15); // 原本 token 期限
-//
-//            System.out.println("lastSendTime=" + lastSendTime);
-//            long secondsSinceLastSend =
-//                    Duration.between(lastSendTime, LocalDateTime.now()).getSeconds();
-//
-//            System.out.println("secondsSinceLastSend=" + secondsSinceLastSend);
-//            if (secondsSinceLastSend < resendCooldownSeconds) {
-//                throw new BusinessException(
-//                        ErrorCode.EMAIL_RESEND_TOO_FREQUENT.getMessage(),
-//                        ErrorCode.EMAIL_RESEND_TOO_FREQUENT,
-//                        HttpStatus.TOO_MANY_REQUESTS
-//                );
-//            }
-//        }
-//
-//
-//        String newToken = generateEmailVerifyToken();
-//        LocalDateTime newExpiredAt = generateEmailVerifyExpiredAt();
-//
-//        user.setEmailVerifyToken(newToken);
-//        user.setEmailVerifyExpiredAt(newExpiredAt);
-//
-//        userRepository.save(user);
-//
-//        String verifyLink =
-//                "http://localhost:8111/api/auth/verify-email?token=" + newToken;
-//
-//        emailService.sendVerifyEmail(user.getEmail(), verifyLink);
-//    }
-//
-//
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        log.info("input password: {}", request.getPassword());
+        log.info("db password: {}", user.getPassword());
+        log.info("matches: {}", passwordEncoder.matches(request.getPassword(), user.getPassword()));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_INCORRECT);
+        }
+
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        Long tenantId = userTenantRepository.findByUserId(user.getId())
+                .stream()
+                .findFirst()
+                .map(UserTenant::getTenantId)
+                .orElse(null);
+
+        List<String> roles = List.of("ROLE_USER");
+
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), tenantId, roles);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
     private String generateEmailVerifyToken() {
         return UUID.randomUUID().toString();
     }
