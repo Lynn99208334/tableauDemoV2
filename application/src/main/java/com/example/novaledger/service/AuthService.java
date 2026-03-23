@@ -1,6 +1,8 @@
 package com.example.novaledger.service;
 
+import com.example.novaledger.auth.dto.RegisterRequest;
 import com.example.novaledger.auth.entity.User;
+import com.example.novaledger.auth.entity.UserTenant;
 import com.example.novaledger.auth.enums.UserStatus;
 import com.example.novaledger.auth.jwt.JwtTokenProvider;
 import com.example.novaledger.auth.repository.UserRepository;
@@ -9,13 +11,12 @@ import com.example.novaledger.common.exception.BusinessException;
 import com.example.novaledger.common.exception.ErrorCode;
 import com.example.novaledger.dto.AuthResponse;
 import com.example.novaledger.dto.LoginRequest;
-import com.example.novaledger.dto.RegisterRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.novaledger.auth.entity.UserTenant;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;

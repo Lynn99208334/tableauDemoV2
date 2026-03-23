@@ -1,8 +1,9 @@
 package com.example.novaledger.controller;
 
+import com.example.novaledger.auth.dto.RegisterRequest;
+import com.example.novaledger.common.response.ApiResponse;
 import com.example.novaledger.dto.AuthResponse;
 import com.example.novaledger.dto.LoginRequest;
-import com.example.novaledger.dto.RegisterRequest;
 import com.example.novaledger.dto.ResendVerificationRequest;
 import com.example.novaledger.service.AuthService;
 import com.example.novaledger.service.EmailVerificationService;
@@ -30,36 +31,6 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok());
-    }
-
-//    @PostMapping("/logout")
-//    public ResponseEntity<?> logout(HttpServletRequest request) {
-//
-//        String jwt = resolveToken(request);
-//        System.out.println(">>> logout controller jwt=" + jwt);
-//
-//        if (jwt != null) {
-//            authService.logout(jwt);
-//        }
-//
-//        // 登出就算 token 已過期，也回 200（實務標準）
-//        return ResponseEntity.ok().build();
-//    }
-
-    private String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
-        }
-        return null;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-
-        authService.register(request);
-
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
