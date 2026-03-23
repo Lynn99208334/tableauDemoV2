@@ -1,6 +1,7 @@
 package com.example.novaledger.service;
 
 import com.example.novaledger.auth.entity.User;
+import com.example.novaledger.auth.entity.UserTenant;
 import com.example.novaledger.auth.enums.UserStatus;
 import com.example.novaledger.auth.jwt.JwtTokenProvider;
 import com.example.novaledger.auth.repository.UserRepository;
@@ -74,6 +75,29 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // 建立預設個人 Tenant
+        Tenant tenant = new Tenant();
+        tenant.setCode(UUID.randomUUID().toString().substring(0, 8));
+        tenant.setName(request.getUsername() + "'s Ledger");
+        tenant.setType("PERSONAL");
+        tenant.setPlan("FREE");
+        tenant.setOwnerUserId(user.getId());
+        tenant.setStatus("ACTIVE");
+        tenantRepository.save(tenant);
+
+        // 查 OWNER role
+        Role ownerRole = roleRepository.findByCodeAndTenantIdIsNull("OWNER")
+                .orElseThrow(() -> new IllegalStateException("OWNER role not found"));
+
+        // 建立 UserTenant 關聯
+        UserTenant userTenant = new UserTenant();
+        userTenant.setUserId(user.getId());
+        userTenant.setTenantId(tenant.getId());
+        userTenant.setRoleId(ownerRole.getId());
+        userTenant.setStatus(UserTenantStatus.ACTIVE);
+        userTenant.setJoinedAt(LocalDateTime.now());
+        userTenantRepository.save(userTenant);
+
         // ⭐ 寄送驗證信
         String verifyLink =
                 "http://localhost:8111/api/auth/verify-email?token=" + verifyToken;
@@ -119,6 +143,38 @@ public class AuthService {
 
     private LocalDateTime generateEmailVerifyExpiredAt() {
         return LocalDateTime.now().plusHours(24);
+    }
+
+    // ========================
+// 登入
+// ========================
+    public AuthResponse login(LoginRequest request) {
+
+        // 1. 查帳號
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
+
+        // 2. 驗證密碼
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
+
+        // 3. 查 UserTenant（取第一個 ACTIVE 的）
+        UserTenant userTenant = userTenantRepository
+                .findFirstByUserIdAndStatus(user.getId(), UserTenantStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
+
+        // 4. 查 Role
+        Role role = roleRepository.findById(userTenant.getRoleId())
+                .orElseThrow(() -> new IllegalStateException("Role not found"));
+
+        // 5. 產生 token
+        List<String> roles = List.of(role.getCode());
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), userTenant.getTenantId(), roles);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        return new AuthResponse(accessToken, refreshToken);
     }
 
 }
