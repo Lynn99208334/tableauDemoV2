@@ -1,9 +1,9 @@
 package com.example.novaledger.controller;
 
-import com.example.novaledger.auth.dto.AuthResponse;
-import com.example.novaledger.auth.dto.LoginRequest;
 import com.example.novaledger.auth.dto.RegisterRequest;
 import com.example.novaledger.common.response.ApiResponse;
+import com.example.novaledger.dto.AuthResponse;
+import com.example.novaledger.dto.LoginRequest;
 import com.example.novaledger.dto.ResendVerificationRequest;
 import com.example.novaledger.service.AuthService;
 import com.example.novaledger.service.EmailVerificationService;
@@ -34,21 +34,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "登入")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
-            @Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.ok(response));
-    }
-
-    @PostMapping("/logout")
-    @Operation(summary = "登出")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String jwt = resolveToken(request);
-        if (jwt != null) {
-            authService.logout(jwt);
-        }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/verify-email")
