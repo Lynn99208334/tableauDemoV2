@@ -5,8 +5,10 @@ import com.example.novaledger.service.AuthService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
+@RequestMapping("/page")
 public class PageController {
     private final AuthService authService;
 
@@ -24,13 +26,14 @@ public class PageController {
         return "register";
     }
 
-    // ✅ 直接在這裡處理表單送出
+    @GetMapping("/dashboard")
+    public String dashboard() {
+        return "index";
+    }
+
     @PostMapping("/register")
     public String register(RegisterRequest request) {
-
         authService.register(request);
-
-        return "redirect:/login?registered";
+        return "redirect:/page/login?registered";
     }
 }
-

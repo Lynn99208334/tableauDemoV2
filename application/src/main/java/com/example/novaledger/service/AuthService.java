@@ -63,6 +63,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
+        System.out.println(">>> password before encode: [" + request.getPassword() + "]");
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         user.setStatus(UserStatus.REGISTERED);

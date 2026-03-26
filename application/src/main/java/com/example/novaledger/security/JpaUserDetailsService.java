@@ -1,9 +1,9 @@
 package com.example.novaledger.security;
 
-import com.example.novaledger.common.exception.BusinessException;
-import com.example.novaledger.common.exception.ErrorCode;
 import com.example.novaledger.auth.entity.User;
 import com.example.novaledger.auth.repository.UserRepository;
+import com.example.novaledger.common.exception.BusinessException;
+import com.example.novaledger.common.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,31 +24,25 @@ public class JpaUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email)
-            throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        System.out.println(">>> loadUserByUsername called with: " + email);
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() ->
+                            new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage())
+                    );
+            System.out.println(">>> user found: " + user.getEmail());
+            System.out.println(">>> emailVerified: " + user.getEmailVerified());
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                ErrorCode.USER_NOT_FOUND.getMessage()
-                        )
-                );
-        System.out.println(">>> FOUND USER: " + user.getEmail() + ", verified=" + user.getEmailVerified() + ", password=" + user.getPassword());
-        System.out.println(">>> PASSWORD MATCH: " + new BCryptPasswordEncoder().matches("password123", user.getPassword()));
-        System.out.println(new BCryptPasswordEncoder().encode("password123"));
-
-        // ✅ 關鍵：登入時擋未完成 Email 驗證的帳號
-        if (!skipEmailVerify && !Boolean.TRUE.equals(user.getEmailVerified())) {
-            throw new BusinessException(
-                    ErrorCode.EMAIL_NOT_VERIFIED
-            );
+            if (!skipEmailVerify && !Boolean.TRUE.equals(user.getEmailVerified())) {
+                throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+            }
+            System.out.println(">>> raw password from DB: [" + user.getPassword() + "]");
+            System.out.println(">>> manual check 123456789: " + new BCryptPasswordEncoder().matches("123456789", user.getPassword()));
+            return new SecurityUser(user);
+        } catch (Exception e) {
+            System.out.println(">>> EXCEPTION in loadUserByUsername: " + e.getClass().getName() + " - " + e.getMessage());
+            throw e;
         }
-
-        // （選擇性）如果你未來有停權狀態
-        // if (user.getStatus() != UserStatus.ACTIVE) {
-        //     throw new RuntimeException("ACCOUNT_NOT_ACTIVE");
-        // }
-
-        return new SecurityUser(user);
     }
 }
