@@ -24,6 +24,8 @@ public class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
             "/health",
             "/info",
+            "/page/login",
+            "/page/register",
             "/api/auth/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
@@ -49,6 +51,7 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/page/login")
+                        .loginProcessingUrl("/login")   // ← 加這行
                         .defaultSuccessUrl("/page/dashboard", true)
                         .permitAll()
                 )

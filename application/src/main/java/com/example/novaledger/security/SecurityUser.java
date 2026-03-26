@@ -2,10 +2,11 @@ package com.example.novaledger.security;
 
 import com.example.novaledger.auth.entity.User;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Spring Security 用的 UserDetails Adapter
@@ -24,15 +25,7 @@ public class SecurityUser implements UserDetails {
      */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
-    }
-
-    /**
-     * 密碼（Spring Security 驗證用）
-     */
-    @Override
-    public String getPassword() {
-        return user.getPassword();
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     /**
@@ -78,7 +71,11 @@ public class SecurityUser implements UserDetails {
     /**
      * （選用）取得原始 User
      */
-    public User getUser() {
-        return user;
+    @Override
+    public String getPassword() {
+        System.out.println(">>> SecurityUser.getPassword() returning: [" + user.getPassword() + "]");
+        return user.getPassword();
     }
+
+
 }
