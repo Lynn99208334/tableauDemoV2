@@ -67,7 +67,7 @@ INSERT INTO tenants (
     'alice-personal',
     'Alice 的個人帳本',
     'PERSONAL', 'FREE',
-    (SELECT ID FROM USERS WHERE USERNAME = 'alice'),
+    (SELECT ID FROM users WHERE USERNAME = 'alice'),
     'ACTIVE',
     NOW(), NOW(), NULL
 ),
@@ -76,7 +76,7 @@ INSERT INTO tenants (
     'bob-personal',
     'Bob 的個人帳本',
     'PERSONAL', 'FREE',
-    (SELECT ID FROM USERS WHERE USERNAME = 'bob'),
+    (SELECT ID FROM users WHERE USERNAME = 'bob'),
     'ACTIVE',
     NOW(), NOW(), NULL
 );
