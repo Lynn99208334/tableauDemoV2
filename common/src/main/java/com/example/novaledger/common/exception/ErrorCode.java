@@ -22,7 +22,7 @@ public enum ErrorCode {
     JWT_INVALID("E40102", "Invalid JWT Token", 401),
 
     // ========================
-    // Auth / Account
+    // Auth
     // ========================
     EMAIL_NOT_VERIFIED("AUTH_001", "Email Not Verified", 401),
     EMAIL_TOKEN_INVALID("AUTH_002", "Invalid Email Verification Token", 400),
@@ -41,7 +41,17 @@ public enum ErrorCode {
 
     LOGIN_FAILED("AUTH_030", "Login Failed", 401),
     PASSWORD_INCORRECT("AUTH_032", "Password Incorrect", 401),
-    LOGOUT_FAILED("AUTH_031", "Logout Failed", 400);
+    LOGOUT_FAILED("AUTH_031", "Logout Failed", 400),
+
+    // ========================
+    // Account
+    // ========================
+    ACCOUNT_001("ACCOUNT_001", "Account Not Found", 404),
+
+    // ========================
+    // Credit Card
+    // ========================
+    CARD_001("CARD_001", "Credit Card Not Found", 404);
 
     private final String code;
     private final String message;
