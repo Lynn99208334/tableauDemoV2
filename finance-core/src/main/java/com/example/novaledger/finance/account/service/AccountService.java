@@ -1,5 +1,7 @@
 package com.example.novaledger.finance.account.service;
 
+import com.example.novaledger.common.exception.BusinessException;
+import com.example.novaledger.common.exception.ErrorCode;
 import com.example.novaledger.common.tenant.TenantContext;
 import com.example.novaledger.finance.account.dto.AccountResponse;
 import com.example.novaledger.finance.account.dto.CreateAccountRequest;
@@ -73,7 +75,7 @@ public class AccountService {
                 .stream()
                 .filter(a -> a.getId().equals(accountId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_001));
 
         account.setName(request.getName());
         account.setCurrencyCode(request.getCurrencyCode());
@@ -96,6 +98,18 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         account.setDeletedAt(LocalDateTime.now());
+        userAccountRepository.save(account);
+    }
+
+    @Transactional
+    public void toggleActive(Long userId, Long accountId) {
+        Long tenantId = TenantContext.getTenantId();
+        UserAccount account = userAccountRepository
+                .findByTenantIdAndUserIdAndDeletedAtIsNull(tenantId, userId)
+                .stream()
+                .filter(a -> a.getId().equals(accountId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_001));
         userAccountRepository.save(account);
     }
 }

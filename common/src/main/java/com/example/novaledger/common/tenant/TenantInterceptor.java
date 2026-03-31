@@ -2,6 +2,7 @@ package com.example.novaledger.common.tenant;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -40,15 +41,12 @@ public class TenantInterceptor implements HandlerInterceptor {
             HttpServletResponse response,
             Object handler
     ) throws IOException {
-        System.out.println(">>> preHandle called: " + request.getRequestURI());
         String path = request.getRequestURI();
 
-        // 精確比對根路徑
         if (path.equals("/")) {
             return true;
         }
 
-        // 其他 public endpoints 用 startsWith
         if (Stream.concat(
                 SYSTEM_ENDPOINTS.stream(),
                 PUBLIC_ENDPOINTS.stream()
@@ -56,19 +54,29 @@ public class TenantInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Step 2：強制 tenantId
-        String tenantId = request.getHeader(TENANT_HEADER);
-        System.out.println(">>> TenantInterceptor HIT");
-        System.out.println(">>> URI = " + path);
-        System.out.println(">>> X-Tenant-Id = " + tenantId);
+        // API 路徑：從 header 取 tenantId
+        if (path.startsWith("/api/")) {
+            String tenantId = request.getHeader(TENANT_HEADER);
+            System.out.println(">>> TenantInterceptor HIT (API)");
+            System.out.println(">>> URI = " + path);
+            System.out.println(">>> X-Tenant-Id = " + tenantId);
 
-        if (tenantId == null || tenantId.isBlank()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return false;
+            if (tenantId == null || tenantId.isBlank()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return false;
+            }
+            TenantContext.setTenantId(Long.valueOf(tenantId));
+            return true;
         }
 
-        // Step 3：設置 TenantContext
-        TenantContext.setTenantId(Long.valueOf(tenantId));
+        // 頁面路徑：從 session 取 tenantId
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            Long tenantId = (Long) session.getAttribute("tenantId");
+            if (tenantId != null) {
+                TenantContext.setTenantId(tenantId);
+            }
+        }
         return true;
     }
 

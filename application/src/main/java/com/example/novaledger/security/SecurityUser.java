@@ -77,5 +77,7 @@ public class SecurityUser implements UserDetails {
         return user.getPassword();
     }
 
-
+    public Long getUserId() {
+        return user.getId();
+    }
 }

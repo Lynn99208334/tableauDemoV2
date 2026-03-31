@@ -1,6 +1,7 @@
 package com.example.novaledger.config;
 
 import com.example.novaledger.auth.jwt.JwtAuthenticationFilter;
+import com.example.novaledger.security.LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    private final LoginSuccessHandler loginSuccessHandler;
 
     private static final String[] PUBLIC_PATHS = {
             "/health",
@@ -53,7 +56,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/page/login")
                         .loginProcessingUrl("/login")   // ← 加這行
-                        .defaultSuccessUrl("/page/dashboard", true)
+                        .successHandler(loginSuccessHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout

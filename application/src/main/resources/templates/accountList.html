@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>帳戶管理 - NovaLedger</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/vendor/sweetalert2.v11.10.6.min.css"/>
+</head>
+
+<body class="sb-nav-fixed">
+
+<div th:replace="fragments/navbar :: topnav"></div>
+
+<div id="layoutSidenav">
+    <div id="layoutSidenav_nav">
+        <div th:replace="fragments/navbar :: sidenav"></div>
+    </div>
+
+    <div id="layoutSidenav_content">
+        <main>
+            <div class="container-fluid px-4">
+
+                <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+                    <h1 class="h3 mb-0">帳戶管理</h1>
+                    <a th:href="@{/accounts/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> 新增帳戶
+                    </a>
+                </div>
+                <ol class="breadcrumb mb-4">
+                    <li class="breadcrumb-item"><a th:href="@{/dashboard}">首頁</a></li>
+                    <li class="breadcrumb-item active">帳戶管理</li>
+                </ol>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-university me-1"></i> 我的帳戶
+                    </div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(accounts)}" class="text-center text-muted py-5">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">尚未建立任何帳戶，<a th:href="@{/accounts/new}">立即新增</a>。</p>
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(accounts)}" class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>帳戶名稱</th>
+                                        <th>銀行代碼</th>
+                                        <th>帳戶類型</th>
+                                        <th class="text-end">目前餘額</th>
+                                        <th class="text-center">幣別</th>
+                                        <th class="text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="account : ${accounts}">
+                                        <td th:text="${account.name}">台新薪轉帳戶</td>
+                                        <td th:text="${account.bankCode}">812</td>
+                                        <td th:text="${account.accountType}">CHECKING</td>
+                                        <td class="text-end"
+                                            th:text="${#numbers.formatDecimal(account.currentBalance, 1, 'COMMA', 0, 'POINT')}">
+                                            12,345
+                                        </td>
+                                        <td class="text-center" th:text="${account.currencyCode}">TWD</td>
+                                        <td class="text-center text-nowrap">
+                                            <a th:href="@{/accounts/{id}/edit(id=${account.id})}"
+                                               class="btn btn-outline-primary btn-sm me-1"
+                                               title="編輯">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    th:data-account-id="${account.id}"
+                                                    th:data-account-name="${account.name}"
+                                                    onclick="confirmDelete(this)"
+                                                    title="刪除">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="py-4 bg-light mt-auto">
+            <div class="container-fluid px-4">
+                <div class="d-flex align-items-center justify-content-between small">
+                    <div class="text-muted">Copyright &copy; NovaLedger 2026</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<form id="deleteForm" method="post" th:action="@{/accounts/delete}">
+    <input type="hidden" name="_method" value="DELETE"/>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="js/scripts.js"></script>
+<script src="/js/vendor/sweetalert2.all.v11.10.6.min.js"></script>
+
+<script>
+    function confirmDelete(btn) {
+        const accountId   = btn.dataset.accountId;
+        const accountName = btn.dataset.accountName;
+
+        Swal.fire({
+            title: '確定要刪除？',
+            html: `帳戶「<strong>${accountName}</strong>」刪除後無法復原。`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '確定刪除',
+            cancelButtonText: '取消'
+        }).then(result => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/accounts/${accountId}`;
+                form.submit();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
