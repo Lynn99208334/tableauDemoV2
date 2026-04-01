@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TenantTestController {
 
-    @GetMapping("/test/tenant")
+    @GetMapping("/api/test/tenant")
     public String testTenant() {
         // 若 Interceptor 正確，這裡一定拿得到 tenantId
         return String.valueOf(TenantContext.getTenantId());
