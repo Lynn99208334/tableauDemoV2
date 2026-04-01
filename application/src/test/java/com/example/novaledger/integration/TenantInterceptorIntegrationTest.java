@@ -43,6 +43,8 @@ class TenantInterceptorIntegrationTest {
     @MockitoBean
     JwtTokenProvider jwtTokenProvider;
 
+    private final String uriTemplate = "/api/test/tenant";
+
     /**
      * 這一段是整個測試的「封印」
      * 只要 afterCompletion 沒清 ThreadLocal，測試一定會炸
@@ -56,14 +58,14 @@ class TenantInterceptorIntegrationTest {
 
     @Test
     void request_without_tenantId_should_return_401() throws Exception {
-        mockMvc.perform(get("/test/tenant"))
+        mockMvc.perform(get(uriTemplate))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void request_with_tenantId_should_pass_and_clear_context_after_request() throws Exception {
         mockMvc.perform(
-                        get("/test/tenant")
+                        get(uriTemplate)
                                 .header("X-Tenant-Id", "100")
                 )
                 .andExpect(status().isOk())
