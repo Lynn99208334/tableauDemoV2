@@ -25,7 +25,7 @@ COPY health/src health/src
 COPY common/src common/src
 COPY auth/src auth/src
 COPY application/src application/src
-COPY finance-core/pom.xml finance-core/
+COPY finance-core/src finance-core/src
 
 RUN ./mvnw package -DskipTests -Dskip.npm=true -B
 
