@@ -51,11 +51,20 @@ public enum ErrorCode {
     // ========================
     // Credit Card
     // ========================
-    CARD_001("CARD_001", "Credit Card Not Found", 404);
+    CARD_001("CARD_001", "Credit Card Not Found", 404),
+
+    // ========================
+    // Import
+    // ========================
+    FILE_EMPTY("IMPORT_001", "File is empty", 400),
+    FILE_TOO_LARGE("IMPORT_002", "File size exceeds 10MB limit", 400),
+    FILE_INVALID("IMPORT_003", "Invalid file name", 400),
+    FILE_TYPE_NOT_SUPPORTED("IMPORT_004", "Only .xlsx or .xls files are supported", 400);
 
     private final String code;
     private final String message;
     private final int httpStatus;
+
 
     ErrorCode(String code, String message, int httpStatus) {
         this.code = code;
