@@ -50,16 +50,16 @@ class ImportControllerTest {
 
         when(authContext.getCurrentTenantId(any())).thenReturn(1L);
         when(authContext.getCurrentUserId(any())).thenReturn(1L);
-        when(importService.createUploadJob(any(), anyString(), anyLong(), anyLong()))
+        when(importService.createUploadJob(any(), anyString(), anyString(), anyLong(), anyLong()))
                 .thenReturn(mockResponse);
 
         mockMvc.perform(multipart("/api/import/upload")
                         .file(file)
-                        .param("jobType", "ACCOUNT"))
+                        .param("jobType", "ACCOUNT")
+                        .param("parserKey", "CTBC_SAVINGS_CSV"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.jobId").value(1))
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
     }
-
 }

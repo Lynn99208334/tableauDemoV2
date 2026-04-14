@@ -2,8 +2,11 @@ package com.example.novaledger.finance.importjob.controller;
 
 import com.example.novaledger.common.response.ApiResponse;
 import com.example.novaledger.common.tenant.AuthContext;
+import com.example.novaledger.finance.importjob.dto.JobStatusResponse;
 import com.example.novaledger.finance.importjob.dto.UploadJobResponse;
 import com.example.novaledger.finance.importjob.service.ImportService;
+import com.example.novaledger.finance.importrecord.dto.ParsedRecordErrorResponse;
+import com.example.novaledger.finance.importrecord.dto.ParsedRecordPreviewResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Tag(name = "Import", description = "Excel 匯入")
 @RestController
@@ -25,16 +30,41 @@ public class ImportController {
         this.authContext = authContext;
     }
 
-    @Operation(summary = "上傳 Excel 檔案", description = "支援存摺（ACCOUNT）或信用卡（CREDIT_CARD）格式")
+    @Operation(summary = "上傳檔案", description = "支援存摺（ACCOUNT）或信用卡（CREDIT_CARD）格式")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<UploadJobResponse>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("jobType") String jobType,
+            @RequestParam("parserKey") String parserKey,
             HttpServletRequest request) {
 
         Long tenantId = authContext.getCurrentTenantId(request);
         Long userId = authContext.getCurrentUserId(request);
-        UploadJobResponse response = importService.createUploadJob(file, jobType, tenantId, userId);
+        UploadJobResponse response = importService.createUploadJob(file, jobType, parserKey, tenantId, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/jobs/{jobId}/status")
+    public ResponseEntity<JobStatusResponse> getJobStatus(
+            @PathVariable Long jobId,
+            HttpServletRequest request) {
+        Long tenantId = (Long) request.getAttribute("tenantId");
+        return ResponseEntity.ok(importService.getJobStatus(jobId, tenantId));
+    }
+
+    @GetMapping("/jobs/{jobId}/preview")
+    public ResponseEntity<List<ParsedRecordPreviewResponse>> getJobPreview(
+            @PathVariable Long jobId,
+            HttpServletRequest request) {
+        Long tenantId = (Long) request.getAttribute("tenantId");
+        return ResponseEntity.ok(importService.getJobPreview(jobId, tenantId));
+    }
+
+    @GetMapping("/jobs/{jobId}/errors")
+    public ResponseEntity<List<ParsedRecordErrorResponse>> getJobErrors(
+            @PathVariable Long jobId,
+            HttpServletRequest request) {
+        Long tenantId = (Long) request.getAttribute("tenantId");
+        return ResponseEntity.ok(importService.getJobErrors(jobId, tenantId));
     }
 }

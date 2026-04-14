@@ -37,6 +37,9 @@ public class UploadJob extends BaseTenantEntity {
     @Column(name = "detected_format_id")
     private Long detectedFormatId;
 
+    @Column(name = "parser_key", length = 100)
+    private String parserKey;
+
     public UploadJob() {}
 
     public Long getCreatedBy() { return createdBy; }
@@ -65,4 +68,12 @@ public class UploadJob extends BaseTenantEntity {
 
     public Long getDetectedFormatId() { return detectedFormatId; }
     public void setDetectedFormatId(Long detectedFormatId) { this.detectedFormatId = detectedFormatId; }
+
+    public String getParserKey() {
+        return parserKey;
+    }
+
+    public void setParserKey(String parserKey) {
+        this.parserKey = parserKey;
+    }
 }

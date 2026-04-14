@@ -16,6 +16,7 @@ CREATE TABLE upload_jobs (
 
                              JOB_TYPE      VARCHAR(50) NOT NULL,
                              STATUS        VARCHAR(30) NOT NULL,
+                             PARSER_KEY    VARCHAR(100),
 
                              TOTAL_COUNT   INT,
                              SUCCESS_COUNT INT,
