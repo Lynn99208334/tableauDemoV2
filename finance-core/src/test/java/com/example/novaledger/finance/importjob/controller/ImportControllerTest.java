@@ -56,7 +56,7 @@ class ImportControllerTest {
         mockMvc.perform(multipart("/api/import/upload")
                         .file(file)
                         .param("jobType", "ACCOUNT")
-                        .param("parserKey", "CTBC_SAVINGS_CSV"))
+                        .param("bankCode", "822"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.jobId").value(1))

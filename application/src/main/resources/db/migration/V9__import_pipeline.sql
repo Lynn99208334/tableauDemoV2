@@ -57,7 +57,7 @@ CREATE TABLE upload_files (
                               CREATED_AT        DATETIME     NOT NULL,
                               UPDATED_AT        DATETIME,
 
-                              UNIQUE KEY uk_upload_files_tenant_filename (TENANT_ID, STORED_FILENAME),
+                              UNIQUE KEY uk_upload_files_job (UPLOAD_JOB_ID),
                               INDEX idx_upload_files_job (TENANT_ID, UPLOAD_JOB_ID),
 
                               CONSTRAINT fk_uf_tenant
@@ -75,11 +75,17 @@ CREATE TABLE parsed_records (
                                 UPLOAD_JOB_ID  BIGINT      NOT NULL,
                                 UPLOAD_FILE_ID BIGINT      NOT NULL,
 
-                                SOURCE_ROW_NUM INT         NOT NULL,
-                                RAW_DATA       JSON        NOT NULL,
-                                PARSE_STATUS   VARCHAR(30) NOT NULL,
-                                IMPORT_STATUS  VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-                                ERROR_MESSAGE  TEXT,
+                                SOURCE_ROW_NUM   INT           NOT NULL,
+                                RAW_DATA         JSON          NOT NULL,
+                                PARSE_STATUS     VARCHAR(30)   NOT NULL,
+                                IMPORT_STATUS    VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
+                                ERROR_MESSAGE    TEXT,
+
+                                TRANSACTION_DATE DATE,
+                                DESCRIPTION      VARCHAR(500),
+                                AMOUNT           DECIMAL(15,2),
+                                BALANCE          DECIMAL(15,2),
+                                CURRENCY_CODE    VARCHAR(10)   DEFAULT 'TWD',
 
                                 CREATED_AT     DATETIME    NOT NULL,
                                 UPDATED_AT     DATETIME,

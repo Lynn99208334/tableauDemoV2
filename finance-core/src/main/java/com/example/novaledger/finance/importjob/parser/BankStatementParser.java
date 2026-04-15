@@ -5,22 +5,31 @@ import java.util.List;
 public interface BankStatementParser {
 
     /**
-     * 解析單列資料，回傳解析結果
-     * @param rowData 原始列資料（欄位順序依銀行格式）
-     * @param rowNumber 列號（用於錯誤訊息）
-     * @return ParseResult
-     */
-    ParseResult parseRow(List<String> rowData, int rowNumber);
-
-    /**
      * 回傳此 parser 對應的 parser_key
-     * 必須與 BANK_FILE_FORMATS.parser_key 一致
+     * 格式：{BANK_CODE}_{FILE_TYPE}_{YYYYMMDD}
+     * 範例：822_CSV_20250401
      */
     String getParserKey();
 
     /**
-     * 回傳此格式的 header 起始列數（0-based）
-     * 解析時從這列之後開始讀資料
+     * 回傳銀行代碼，例如 "822"
      */
-    int getDataStartRow();
+    String getBankCode();
+
+    /**
+     * 回傳檔案類型，例如 "CSV"、"XLSX"
+     */
+    String getFileType();
+
+    /**
+     * 判斷此 parser 是否能處理指定的原始列資料
+     * 用於自動偵測（MVP 後啟用）
+     */
+    boolean canHandle(List<List<String>> rows);
+
+    /**
+     * 解析所有資料列，回傳解析結果清單
+     * @param rows 已讀取的所有列（含 header）
+     */
+    List<ParseResult> parse(List<List<String>> rows);
 }

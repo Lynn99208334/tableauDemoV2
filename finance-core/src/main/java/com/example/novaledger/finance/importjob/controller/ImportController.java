@@ -35,36 +35,37 @@ public class ImportController {
     public ResponseEntity<ApiResponse<UploadJobResponse>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("jobType") String jobType,
-            @RequestParam("parserKey") String parserKey,
+            @RequestParam("bankCode") String bankCode,
             HttpServletRequest request) {
 
         Long tenantId = authContext.getCurrentTenantId(request);
         Long userId = authContext.getCurrentUserId(request);
-        UploadJobResponse response = importService.createUploadJob(file, jobType, parserKey, tenantId, userId);
+        UploadJobResponse response = importService.createUploadJob(
+                file, jobType, bankCode, tenantId, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/jobs/{jobId}/status")
-    public ResponseEntity<JobStatusResponse> getJobStatus(
+    public ResponseEntity<ApiResponse<JobStatusResponse>> getJobStatus(
             @PathVariable Long jobId,
             HttpServletRequest request) {
         Long tenantId = (Long) request.getAttribute("tenantId");
-        return ResponseEntity.ok(importService.getJobStatus(jobId, tenantId));
+        return ResponseEntity.ok(ApiResponse.ok(importService.getJobStatus(jobId, tenantId)));
     }
 
     @GetMapping("/jobs/{jobId}/preview")
-    public ResponseEntity<List<ParsedRecordPreviewResponse>> getJobPreview(
+    public ResponseEntity<ApiResponse<List<ParsedRecordPreviewResponse>>> getJobPreview(
             @PathVariable Long jobId,
             HttpServletRequest request) {
         Long tenantId = (Long) request.getAttribute("tenantId");
-        return ResponseEntity.ok(importService.getJobPreview(jobId, tenantId));
+        return ResponseEntity.ok(ApiResponse.ok(importService.getJobPreview(jobId, tenantId)));
     }
 
     @GetMapping("/jobs/{jobId}/errors")
-    public ResponseEntity<List<ParsedRecordErrorResponse>> getJobErrors(
+    public ResponseEntity<ApiResponse<List<ParsedRecordErrorResponse>>> getJobErrors(
             @PathVariable Long jobId,
             HttpServletRequest request) {
         Long tenantId = (Long) request.getAttribute("tenantId");
-        return ResponseEntity.ok(importService.getJobErrors(jobId, tenantId));
+        return ResponseEntity.ok(ApiResponse.ok(importService.getJobErrors(jobId, tenantId)));
     }
 }

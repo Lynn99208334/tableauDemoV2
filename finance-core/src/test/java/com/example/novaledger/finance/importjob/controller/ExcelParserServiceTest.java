@@ -16,18 +16,31 @@ class CtbcBankStatementParserTest {
 
     private CtbcBankStatementParser parser;
 
+    // header 列（4 列）+ 資料列，DATA_START_ROW = 4
+    private static final List<String> EMPTY_ROW = List.of("", "", "", "", "");
+    private static final List<List<String>> HEADER_ROWS = List.of(
+            EMPTY_ROW, EMPTY_ROW, EMPTY_ROW, EMPTY_ROW
+    );
+
     @BeforeEach
     void setUp() {
         parser = new CtbcBankStatementParser();
     }
 
+    private List<ParseResult> parseOneRow(List<String> dataRow) {
+        List<List<String>> rows = new java.util.ArrayList<>(HEADER_ROWS);
+        rows.add(dataRow);
+        return parser.parse(rows);
+    }
+
     @Test
     @DisplayName("正常支出列 → 解析成功，amount 為負值")
-    void parseRow_validWithdrawal_success() {
-        List<String> row = List.of("2026/3/3", "中信卡", "678", "", "0");
+    void parse_validWithdrawal_success() {
+        List<ParseResult> results = parseOneRow(
+                List.of("2026/3/3", "中信卡", "678", "", "0"));
 
-        ParseResult result = parser.parseRow(row, 5);
-
+        assertThat(results.size()).isEqualTo(1);
+        ParseResult result = results.get(0);
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getTransactionDate()).isEqualTo(LocalDate.of(2026, 3, 3));
         assertThat(result.getDescription()).isEqualTo("中信卡");
@@ -37,11 +50,12 @@ class CtbcBankStatementParserTest {
 
     @Test
     @DisplayName("正常存入列 → 解析成功，amount 為正值")
-    void parseRow_validDeposit_success() {
-        List<String> row = List.of("2026/3/3", "跨行轉", "", "49000", "49000");
+    void parse_validDeposit_success() {
+        List<ParseResult> results = parseOneRow(
+                List.of("2026/3/3", "跨行轉", "", "49000", "49000"));
 
-        ParseResult result = parser.parseRow(row, 6);
-
+        assertThat(results.size()).isEqualTo(1);
+        ParseResult result = results.get(0);
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("49000"));
         assertThat(result.getBalance()).isEqualByComparingTo(new BigDecimal("49000"));
@@ -49,33 +63,36 @@ class CtbcBankStatementParserTest {
 
     @Test
     @DisplayName("金額格式錯誤 → 解析失敗，errorMessage 包含關鍵字")
-    void parseRow_invalidAmount_failure() {
-        List<String> row = List.of("2026/3/3", "中信卡", "abc", "", "0");
+    void parse_invalidAmount_failure() {
+        List<ParseResult> results = parseOneRow(
+                List.of("2026/3/3", "中信卡", "abc", "", "0"));
 
-        ParseResult result = parser.parseRow(row, 5);
-
+        assertThat(results.size()).isEqualTo(1);
+        ParseResult result = results.get(0);
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getErrorMessage()).contains("金額格式錯誤");
     }
 
     @Test
     @DisplayName("日期格式錯誤 → 解析失敗，errorMessage 包含關鍵字")
-    void parseRow_invalidDate_failure() {
-        List<String> row = List.of("20260303", "中信卡", "678", "", "0");
+    void parse_invalidDate_failure() {
+        List<ParseResult> results = parseOneRow(
+                List.of("20260303", "中信卡", "678", "", "0"));
 
-        ParseResult result = parser.parseRow(row, 5);
-
+        assertThat(results.size()).isEqualTo(1);
+        ParseResult result = results.get(0);
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getErrorMessage()).contains("日期格式錯誤");
     }
 
     @Test
     @DisplayName("欄位數不足 → 解析失敗")
-    void parseRow_insufficientColumns_failure() {
-        List<String> row = List.of("2026/3/3", "中信卡");
+    void parse_insufficientColumns_failure() {
+        List<ParseResult> results = parseOneRow(
+                List.of("2026/3/3", "中信卡"));
 
-        ParseResult result = parser.parseRow(row, 5);
-
+        assertThat(results.size()).isEqualTo(1);
+        ParseResult result = results.get(0);
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getErrorMessage()).contains("欄位數不足");
     }

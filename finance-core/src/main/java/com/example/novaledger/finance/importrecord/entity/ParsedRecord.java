@@ -4,6 +4,9 @@ import com.example.novaledger.common.entity.BaseTenantEntity;
 import com.example.novaledger.finance.enums.ImportStatus;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "parsed_records")
 public class ParsedRecord extends BaseTenantEntity {
@@ -30,6 +33,21 @@ public class ParsedRecord extends BaseTenantEntity {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "transaction_date")
+    private LocalDate transactionDate;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "amount", precision = 15, scale = 2)
+    private BigDecimal amount;
+
+    @Column(name = "balance", precision = 15, scale = 2)
+    private BigDecimal balance;
+
+    @Column(name = "currency_code", length = 10)
+    private String currencyCode = "TWD";
+
     public ParsedRecord() {}
 
     public Long getUploadJobId() { return uploadJobId; }
@@ -52,4 +70,19 @@ public class ParsedRecord extends BaseTenantEntity {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public LocalDate getTransactionDate() { return transactionDate; }
+    public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public BigDecimal getBalance() { return balance; }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
+
+    public String getCurrencyCode() { return currencyCode; }
+    public void setCurrencyCode(String currencyCode) { this.currencyCode = currencyCode; }
 }

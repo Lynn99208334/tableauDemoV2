@@ -9,6 +9,7 @@ import com.example.novaledger.finance.importjob.dto.UploadJobResponse;
 import com.example.novaledger.finance.importjob.entity.UploadFile;
 import com.example.novaledger.finance.importjob.entity.UploadJob;
 import com.example.novaledger.finance.importjob.parser.ParseResult;
+import com.example.novaledger.finance.importjob.parser.ParserRegistry;
 import com.example.novaledger.finance.importjob.repository.UploadFileRepository;
 import com.example.novaledger.finance.importjob.repository.UploadJobRepository;
 import com.example.novaledger.finance.importrecord.dto.ParsedRecordErrorResponse;
@@ -20,6 +21,7 @@ import com.example.novaledger.finance.importrecord.repository.ParsedRecordReposi
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -37,22 +39,31 @@ public class ImportService {
     private final FileParserService fileParserService;
     private final ParsedRecordRepository parsedRecordRepository;
     private final ImportLogRepository importLogRepository;
+    private final ParserRegistry parserRegistry;
+    private final ImportJobStatusService importJobStatusService;
+    private final TransactionTemplate transactionTemplate;
 
     public ImportService(UploadJobRepository uploadJobRepository,
                          UploadFileRepository uploadFileRepository,
                          FileParserService fileParserService,
                          ParsedRecordRepository parsedRecordRepository,
-                         ImportLogRepository importLogRepository) {
+                         ImportLogRepository importLogRepository,
+                         ParserRegistry parserRegistry,
+                         ImportJobStatusService importJobStatusService,
+                         TransactionTemplate transactionTemplate) {
         this.uploadJobRepository = uploadJobRepository;
         this.uploadFileRepository = uploadFileRepository;
         this.fileParserService = fileParserService;
         this.parsedRecordRepository = parsedRecordRepository;
         this.importLogRepository = importLogRepository;
+        this.parserRegistry = parserRegistry;
+        this.importJobStatusService = importJobStatusService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Transactional
     public UploadJobResponse createUploadJob(MultipartFile file, String jobType,
-                                             String parserKey, Long tenantId, Long userId) {
+                                             String bankCode, Long tenantId, Long userId) {
         validateFile(file);
 
         byte[] fileBytes;
@@ -62,6 +73,8 @@ public class ImportService {
             throw new BusinessException(ErrorCode.IMPORT_FILE_READ_FAILED);
         }
 
+        String parserKey = parserRegistry.resolveParserKey(bankCode, file.getOriginalFilename());
+
         UploadJob job = new UploadJob();
         job.setTenantId(tenantId);
         job.setStatus("PENDING");
@@ -70,15 +83,6 @@ public class ImportService {
         job.setParserKey(parserKey);
         uploadJobRepository.save(job);
 
-        UploadFile uploadFile = new UploadFile();
-        uploadFile.setUploadJobId(job.getId());
-        uploadFile.setTenantId(tenantId);
-        uploadFile.setOriginalFilename(file.getOriginalFilename());
-        uploadFile.setStoredFilename("");
-        uploadFile.setFileSize(file.getSize());
-        uploadFile.setMimeType(file.getContentType());
-        uploadFileRepository.save(uploadFile);
-
         UploadJobResponse response = new UploadJobResponse();
         response.setJobId(job.getId());
         response.setStatus(job.getStatus());
@@ -86,7 +90,8 @@ public class ImportService {
         response.setOriginalFilename(file.getOriginalFilename());
         response.setCreatedAt(job.getCreatedAt());
 
-        processImportJob(job.getId(), tenantId, fileBytes, file.getOriginalFilename());
+        processImportJob(job.getId(), tenantId, fileBytes,
+                file.getOriginalFilename(), file.getContentType(), file.getSize());
 
         return response;
     }
@@ -102,77 +107,83 @@ public class ImportService {
         if (originalFilename == null) {
             throw new BusinessException(ErrorCode.FILE_INVALID);
         }
-        String extension = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
+        String extension = originalFilename
+                .substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new BusinessException(ErrorCode.FILE_TYPE_NOT_SUPPORTED);
         }
     }
 
     @Async
-    @Transactional
-    public void processImportJob(Long jobId, Long tenantId, byte[] fileBytes, String originalFilename) {
-        UploadJob job = uploadJobRepository.findByIdAndTenantId(jobId, tenantId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.IMPORT_JOB_NOT_FOUND));
-
+    public void processImportJob(Long jobId, Long tenantId, byte[] fileBytes,
+                                 String originalFilename, String mimeType, long fileSize) {
         try {
-            job.setStatus("PROCESSING");
-            uploadJobRepository.save(job);
+            transactionTemplate.executeWithoutResult(status -> {
+                UploadJob job = uploadJobRepository.findByIdAndTenantId(jobId, tenantId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.IMPORT_JOB_NOT_FOUND));
 
-            List<ParseResult> results = fileParserService.parse(
-                    fileBytes, originalFilename, job.getParserKey());
+                job.setStatus("PROCESSING");
+                uploadJobRepository.save(job);
 
-            UploadFile uploadFile = uploadFileRepository.findByUploadJobId(jobId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.IMPORT_JOB_NOT_FOUND));
+                UploadFile uploadFile = new UploadFile();
+                uploadFile.setUploadJobId(jobId);
+                uploadFile.setTenantId(tenantId);
+                uploadFile.setOriginalFilename(originalFilename);
+                uploadFile.setStoredFilename("");
+                uploadFile.setFileSize(fileSize);
+                uploadFile.setMimeType(mimeType);
+                uploadFileRepository.save(uploadFile);
 
-            int successCount = 0;
-            int failCount = 0;
+                List<ParseResult> results = fileParserService.parse(
+                        fileBytes, originalFilename, job.getParserKey());
 
-            for (ParseResult result : results) {
-                ParsedRecord record = new ParsedRecord();
-                record.setTenantId(tenantId);
-                record.setUploadJobId(jobId);
-                record.setUploadFileId(uploadFile.getId());
-                record.setSourceRowNum(result.getRowNumber());
-                record.setRawData(buildRawDataJson(result));
+                int successCount = 0;
+                int failCount = 0;
 
-                if (result.isSuccess()) {
-                    record.setParseStatus(ParseStatus.SUCCESS.name());
-                    record.setImportStatus(ImportStatus.PENDING);
-                    successCount++;
-                } else {
-                    record.setParseStatus(ParseStatus.FAILED.name());
-                    record.setImportStatus(ImportStatus.FAILED);
-                    record.setErrorMessage(result.getErrorMessage());
-                    failCount++;
+                for (ParseResult result : results) {
+                    ParsedRecord record = new ParsedRecord();
+                    record.setTenantId(tenantId);
+                    record.setUploadJobId(jobId);
+                    record.setUploadFileId(uploadFile.getId());
+                    record.setSourceRowNum(result.getRowNumber());
+                    record.setRawData(buildRawDataJson(result));
 
-                    ImportLog log = new ImportLog();
-                    log.setTenantId(tenantId);
-                    log.setUploadJobId(jobId);
-                    log.setLogLevel("ERROR");
-                    log.setMessage(result.getErrorMessage());
-                    importLogRepository.save(log);
+                    if (result.isSuccess()) {
+                        record.setParseStatus(ParseStatus.SUCCESS.name());
+                        record.setImportStatus(ImportStatus.PENDING);
+                        record.setTransactionDate(result.getTransactionDate());
+                        record.setDescription(result.getDescription());
+                        record.setAmount(result.getAmount());
+                        record.setBalance(result.getBalance());
+                        record.setCurrencyCode("TWD");
+                        successCount++;
+                    } else {
+                        record.setParseStatus(ParseStatus.FAILED.name());
+                        record.setImportStatus(ImportStatus.FAILED);
+                        record.setErrorMessage(result.getErrorMessage());
+                        failCount++;
+
+                        ImportLog log = new ImportLog();
+                        log.setTenantId(tenantId);
+                        log.setUploadJobId(jobId);
+                        log.setLogLevel("ERROR");
+                        log.setMessage(result.getErrorMessage());
+                        importLogRepository.save(log);
+                    }
+
+                    parsedRecordRepository.save(record);
                 }
 
-                parsedRecordRepository.save(record);
-            }
+                job.setStatus(failCount == 0 ? "COMPLETED" : "COMPLETED_WITH_ERRORS");
+                job.setTotalCount(results.size());
+                job.setSuccessCount(successCount);
+                job.setFailCount(failCount);
+                job.setFinishedAt(LocalDateTime.now());
+                uploadJobRepository.save(job);
+            });
 
-            job.setStatus(failCount == 0 ? "COMPLETED" : "COMPLETED_WITH_ERRORS");
-            job.setTotalCount(results.size());
-            job.setSuccessCount(successCount);
-            job.setFailCount(failCount);
-            job.setFinishedAt(LocalDateTime.now());
-            uploadJobRepository.save(job);
-
-        } catch (BusinessException e) {
-            job.setStatus("FAILED");
-            job.setFinishedAt(LocalDateTime.now());
-            uploadJobRepository.save(job);
-            throw e;
         } catch (Exception e) {
-            job.setStatus("FAILED");
-            job.setFinishedAt(LocalDateTime.now());
-            uploadJobRepository.save(job);
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+            importJobStatusService.markJobFailed(jobId, tenantId);
         }
     }
 
@@ -214,7 +225,11 @@ public class ImportService {
                 .map(r -> new ParsedRecordPreviewResponse(
                         r.getId(),
                         r.getSourceRowNum(),
-                        r.getRawData(),
+                        r.getTransactionDate(),
+                        r.getDescription(),
+                        r.getAmount(),
+                        r.getBalance(),
+                        r.getCurrencyCode(),
                         r.getImportStatus().name()
                 ))
                 .toList();
