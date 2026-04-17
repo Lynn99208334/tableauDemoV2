@@ -10,10 +10,13 @@ import com.example.novaledger.finance.transaction.entity.Transaction;
 import com.example.novaledger.finance.transaction.entity.TransactionItem;
 import com.example.novaledger.finance.transaction.repository.TransactionItemRepository;
 import com.example.novaledger.finance.transaction.repository.TransactionRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -138,5 +141,20 @@ public class TransactionService {
                     .add(amount.abs().multiply(BigDecimal.valueOf(direction))));
             creditCardRepository.save(card);
         }
+    }
+
+    public Page<Transaction> getTransactions(Long tenantId, Pageable pageable) {
+        return transactionRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
+    }
+
+    public Page<Transaction> getTransactionsByAccount(Long tenantId, Long accountId, Pageable pageable) {
+        return transactionRepository.findByTenantIdAndAccountIdAndDeletedAtIsNull(tenantId, accountId, pageable);
+    }
+
+    public Page<Transaction> getTransactionsByAccountAndDateRange(
+            Long tenantId, Long accountId, LocalDate from, LocalDate to, Pageable pageable) {
+        return transactionRepository
+                .findByTenantIdAndAccountIdAndTransactionDateBetweenAndDeletedAtIsNull(
+                        tenantId, accountId, from, to, pageable);
     }
 }
