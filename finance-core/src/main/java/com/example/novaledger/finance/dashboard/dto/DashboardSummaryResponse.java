@@ -6,8 +6,9 @@ import java.util.Map;
 
 public class DashboardSummaryResponse {
 
-    private Map<String, BigDecimal> totalAssetsByCurrency;
-    private BigDecimal totalAssetsInTwd;
+    private Map<String, BigDecimal> totalAssetsByCurrency;  // 各幣別原始金額
+    private Map<String, BigDecimal> assetsByTwd;            // 各幣別換算後 TWD 等值（供幣別佔比圓餅圖）
+    private BigDecimal totalAssetsInTwd;                    // 總資產（TWD 合計）
     private BigDecimal monthlyIncome;
     private BigDecimal monthlyExpense;
     private List<CategoryBreakdownItem> categoryBreakdown;
@@ -15,6 +16,9 @@ public class DashboardSummaryResponse {
 
     public Map<String, BigDecimal> getTotalAssetsByCurrency() { return totalAssetsByCurrency; }
     public void setTotalAssetsByCurrency(Map<String, BigDecimal> totalAssetsByCurrency) { this.totalAssetsByCurrency = totalAssetsByCurrency; }
+
+    public Map<String, BigDecimal> getAssetsByTwd() { return assetsByTwd; }
+    public void setAssetsByTwd(Map<String, BigDecimal> assetsByTwd) { this.assetsByTwd = assetsByTwd; }
 
     public BigDecimal getTotalAssetsInTwd() { return totalAssetsInTwd; }
     public void setTotalAssetsInTwd(BigDecimal totalAssetsInTwd) { this.totalAssetsInTwd = totalAssetsInTwd; }
