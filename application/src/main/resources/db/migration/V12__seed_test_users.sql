@@ -1,18 +1,14 @@
 -- ========================================
 -- NovaLedger Seed Data
 -- Flyway Migration V12
--- 測試用 USERS + TENANTS
---
--- 所有帳號密碼均為：password123
--- bcrypt hash (cost=10)：
---   $2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C
+-- USERS + TENANTS（含 son）
 -- ========================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ========================================
--- 測試使用者
+-- USERS
 -- ========================================
 
 INSERT INTO users (
@@ -32,7 +28,7 @@ INSERT INTO users (
     TRUE, NULL,
     NOW(), NOW(), NULL
 ),
--- 一般測試用戶 Alice
+-- Alice
 (
     'alice',
     'alice@novaledger.dev',
@@ -42,7 +38,7 @@ INSERT INTO users (
     FALSE, NULL,
     NOW(), NOW(), NULL
 ),
--- 一般測試用戶 Bob
+-- Bob
 (
     'bob',
     'bob@novaledger.dev',
@@ -51,10 +47,20 @@ INSERT INTO users (
     NULL, NULL, NULL,
     FALSE, NULL,
     NOW(), NOW(), NULL
+),
+-- ✅ Son（新增）
+(
+    'son',
+    'son@novaledger.dev',
+    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
+    TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
+    NULL, NULL, NULL,
+    FALSE, NULL,
+    NOW(), NOW(), NULL
 );
 
 -- ========================================
--- 測試租戶（個人帳本）
+-- TENANTS
 -- ========================================
 
 INSERT INTO tenants (
@@ -62,7 +68,7 @@ INSERT INTO tenants (
     OWNER_USER_ID, STATUS,
     CREATED_AT, UPDATED_AT, DELETED_AT
 ) VALUES
--- Alice 的個人帳本
+-- Alice 個人帳
 (
     'alice-personal',
     'Alice 的個人帳本',
@@ -71,7 +77,7 @@ INSERT INTO tenants (
     'ACTIVE',
     NOW(), NOW(), NULL
 ),
--- Bob 的個人帳本
+-- Bob 個人帳
 (
     'bob-personal',
     'Bob 的個人帳本',
