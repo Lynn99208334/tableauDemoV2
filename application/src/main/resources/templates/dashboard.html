@@ -1,36 +1,336 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="utf-8"/>
-    <title>Tableau × Spring Boot Demo</title>
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(
+          'Dashboard',
+          ~{::content},
+          ~{::pagejs}
+      )}">
 
-    <!-- 官方 Embedding API v3（用 <tableau-viz> Web Component） -->
-    <script type="module"
-            src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+<th:block th:fragment="content">
+    <div class="container-fluid px-4">
+        <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+            <h1 class="h3 mb-0">Dashboard</h1>
+        </div>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">首頁</li>
+        </ol>
 
-    <style>
-        body { font-family: system-ui, -apple-system, "Noto Sans TC", Arial, sans-serif; margin: 24px; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        #viz { width: 100%; height: 800px; border: 1px solid #e5e7eb; border-radius: 12px; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <h1>Tableau 視覺化</h1>
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center text-muted py-5" style="display:none;">
+            <i class="fas fa-wallet fa-3x mb-3"></i>
+            <h5>尚未建立任何帳戶</h5>
+            <p class="mb-3">新增帳戶後，Dashboard 將顯示你的資產概況。</p>
+            <a href="/accounts/new" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> 新增帳戶
+            </a>
+        </div>
 
-    <!-- 把 src 換成你的實際儀表板分享網址；先用 Public 範例測通路 -->
-    <tableau-viz id="viz"
-                 src="https://public.tableau.com/views/Superstore_embedded_800x800/Overview"
-                 toolbar="bottom"
-                 hide-tabs>
-    </tableau-viz>
+        <div id="dashboardContent">
 
-    <!-- 若要在載入後呼叫 API（如篩選器/參數），可以用下面這段。先留著備用 -->
-    <script type="module">
-        // const viz = document.getElementById('viz');
-        // await viz.whenLoaded();
-        // // 範例：設定參數、觸發過濾（等你有自己的 view 再玩）
+            <!-- Row 1：三張摘要卡片 -->
+            <div class="row g-3 mb-4">
+                <div class="col-xl-4 col-md-6">
+                    <div class="card h-100" style="border-left:4px solid #4e73df;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="text-xs text-uppercase text-muted fw-bold">總資產（TWD 合計）</div>
+                                <i class="fas fa-coins fa-lg text-primary opacity-50"></i>
+                            </div>
+                            <div class="h4 mb-1 fw-bold" id="totalAssetsInTwd">—</div>
+                            <div id="assetsByCurrency" class="small text-muted"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4 col-md-6">
+                    <div class="card h-100" style="border-left:4px solid #1cc88a;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="text-xs text-uppercase text-muted fw-bold">本月收入</div>
+                                <i class="fas fa-arrow-up fa-lg text-success opacity-50"></i>
+                            </div>
+                            <div class="h4 mb-0 fw-bold text-success" id="monthlyIncome">—</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4 col-md-6">
+                    <div class="card h-100" style="border-left:4px solid #e74a3b;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="text-xs text-uppercase text-muted fw-bold">本月支出</div>
+                                <i class="fas fa-arrow-down fa-lg text-danger opacity-50"></i>
+                            </div>
+                            <div class="h4 mb-0 fw-bold text-danger" id="monthlyExpense">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2：四個圖表一排 -->
+            <div class="row g-3 mb-4">
+                <!-- 資產幣別佔比 -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">
+                            <i class="fas fa-chart-pie me-1"></i> 資產幣別佔比
+                        </div>
+                        <div class="card-body p-2">
+                            <canvas id="currencyPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本月支出分類佔比 -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">
+                            <i class="fas fa-chart-pie me-1"></i> 支出分類佔比
+                        </div>
+                        <div class="card-body p-2">
+                            <div id="noBreakdownMsg" class="text-center text-muted py-4" style="display:none;">本月尚無支出記錄</div>
+                            <canvas id="categoryPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本月收支比較（長條） -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">
+                            <i class="fas fa-chart-bar me-1"></i> 本月收支比較
+                        </div>
+                        <div class="card-body p-2">
+                            <canvas id="incomeExpenseBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 收支淨額（水平長條 or Doughnut） -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">
+                            <i class="fas fa-balance-scale me-1"></i> 本月收支淨額
+                        </div>
+                        <div class="card-body p-2 d-flex flex-column align-items-center justify-content-center">
+                            <canvas id="netBarChart"></canvas>
+                            <div id="netLabel" class="mt-2 fw-bold fs-5"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3：分類明細表（全寬） -->
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="card mb-4">
+                        <div class="card-header fw-semibold">
+                            <i class="fas fa-list me-1"></i> 本月支出分類明細
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="noBreakdownTable" class="text-center text-muted py-4" style="display:none;">本月尚無支出記錄</div>
+                            <table class="table table-hover mb-0" id="breakdownTable" style="display:none;">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>分類</th>
+                                    <th class="text-end">金額（TWD）</th>
+                                    <th class="text-end">佔比</th>
+                                </tr>
+                                </thead>
+                                <tbody id="breakdownTableBody"></tbody>
+                                <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td>合計</td>
+                                    <td class="text-end" id="breakdownTotal">—</td>
+                                    <td class="text-end">100%</td>
+                                </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /dashboardContent -->
+    </div>
+</th:block>
+
+<th:block th:fragment="pagejs">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        const PIE_COLORS = [
+            '#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b',
+            '#858796','#5a5c69','#fd7e14','#20c997','#6f42c1'
+        ];
+
+        function fmt(num) {
+            if (num == null) return '0';
+            return Number(num).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        // 圓餅圖共用 options（labels 直接顯示在圖上）
+        function pieOptions(amounts) {
+            const total = amounts.reduce((a, b) => a + b, 0);
+            return {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+                    tooltip: { enabled: false },
+                    datalabels: {
+                        color: '#fff',
+                        font: { size: 11, weight: 'bold' },
+                        formatter: (value, ctx) => {
+                            const pct = total > 0 ? (value / total * 100).toFixed(1) : '0.0';
+                            if (value / total < 0.05) return ''; // 太小不顯示
+                            return `${fmt(value)}\n${pct}%`;
+                        }
+                    }
+                }
+            };
+        }
+
+        async function loadDashboard() {
+            try {
+                const res  = await fetch('/api/dashboard/summary');
+                const json = await res.json();
+                if (!json.success) return;
+                const data = json.data;
+
+                // Empty State
+                if (!data.hasAccounts) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('dashboardContent').style.display = 'none';
+                    return;
+                }
+
+                // ── 摘要卡片 ─────────────────────────────────────────
+                document.getElementById('totalAssetsInTwd').textContent = 'TWD ' + fmt(data.totalAssetsInTwd);
+                const byCurrency = data.totalAssetsByCurrency || {};
+                document.getElementById('assetsByCurrency').textContent =
+                    Object.entries(byCurrency).map(([c, a]) => `${c} ${fmt(a)}`).join('　');
+                document.getElementById('monthlyIncome').textContent  = 'TWD ' + fmt(data.monthlyIncome);
+                document.getElementById('monthlyExpense').textContent = 'TWD ' + fmt(data.monthlyExpense);
+
+                // ── 幣別佔比圓餅 ──────────────────────────────────────
+                const assetsByTwd  = data.assetsByTwd || {};
+                const curLabels    = Object.keys(assetsByTwd);
+                const curAmounts   = Object.values(assetsByTwd).map(Number);
+                new Chart(document.getElementById('currencyPieChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: curLabels,
+                        datasets: [{ data: curAmounts, backgroundColor: PIE_COLORS.slice(0, curLabels.length), borderWidth: 2 }]
+                    },
+                    options: pieOptions(curAmounts)
+                });
+
+                // ── 收支長條圖 ────────────────────────────────────────
+                const income  = Number(data.monthlyIncome);
+                const expense = Number(data.monthlyExpense);
+                new Chart(document.getElementById('incomeExpenseBarChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['收入', '支出'],
+                        datasets: [{
+                            data: [income, expense],
+                            backgroundColor: ['#1cc88a', '#e74a3b'],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: {
+                                anchor: 'end', align: 'end',
+                                color: '#444', font: { size: 11, weight: 'bold' },
+                                formatter: v => 'TWD ' + fmt(v)
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: v => fmt(v) } }
+                        }
+                    }
+                });
+
+                // ── 收支淨額水平長條 ──────────────────────────────────
+                const net = income - expense;
+                const netColor = net >= 0 ? '#1cc88a' : '#e74a3b';
+                document.getElementById('netLabel').textContent = (net >= 0 ? '+' : '') + 'TWD ' + fmt(net);
+                document.getElementById('netLabel').style.color = netColor;
+                new Chart(document.getElementById('netBarChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['淨額'],
+                        datasets: [{
+                            data: [Math.abs(net)],
+                            backgroundColor: [netColor],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: {
+                                anchor: 'end', align: 'end',
+                                color: '#444', font: { size: 11, weight: 'bold' },
+                                formatter: v => 'TWD ' + fmt(v)
+                            }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { callback: v => fmt(v) } }
+                        }
+                    }
+                });
+
+                // ── 支出分類圓餅 ──────────────────────────────────────
+                const breakdown = data.categoryBreakdown || [];
+                if (breakdown.length === 0) {
+                    document.getElementById('noBreakdownMsg').style.display   = 'block';
+                    document.getElementById('noBreakdownTable').style.display = 'block';
+                    document.getElementById('categoryPieChart').style.display = 'none';
+                    return;
+                }
+
+                const catLabels  = breakdown.map(b => b.categoryName);
+                const catAmounts = breakdown.map(b => Number(b.amount));
+                const catTotal   = catAmounts.reduce((a, b) => a + b, 0);
+
+                new Chart(document.getElementById('categoryPieChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{ data: catAmounts, backgroundColor: PIE_COLORS.slice(0, catLabels.length), borderWidth: 2 }]
+                    },
+                    options: pieOptions(catAmounts)
+                });
+
+                // ── 分類明細表 ────────────────────────────────────────
+                document.getElementById('breakdownTable').style.display = '';
+                document.getElementById('breakdownTotal').textContent = 'TWD ' + fmt(catTotal);
+                const tbody = document.getElementById('breakdownTableBody');
+                breakdown.forEach(b => {
+                    const pct = catTotal > 0 ? (Number(b.amount) / catTotal * 100).toFixed(1) : '0.0';
+                    const tr  = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${b.categoryName}</td>
+                        <td class="text-end">TWD ${fmt(b.amount)}</td>
+                        <td class="text-end">${pct}%</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (e) {
+                console.error('Dashboard load failed', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboard);
     </script>
-</div>
-</body>
+</th:block>
+
 </html>

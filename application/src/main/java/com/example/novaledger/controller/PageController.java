@@ -28,7 +28,7 @@ public class PageController {
 
     @GetMapping("/dashboard")
     public String dashboard() {
-        return "index";
+        return "dashboard";
     }
 
     @PostMapping("/register")
