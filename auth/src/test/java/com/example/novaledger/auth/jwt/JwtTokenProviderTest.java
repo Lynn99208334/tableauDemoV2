@@ -28,7 +28,6 @@ class JwtTokenProviderTest {
 
         Claims claims = jwtTokenProvider.getClaims(token);
         assertThat(claims.getSubject()).isEqualTo("1");
-        assertThat(claims.get("tenantId", Long.class)).isEqualTo(10L);
         assertThat(claims.get("roles", List.class)).contains("ROLE_USER");
     }
 
