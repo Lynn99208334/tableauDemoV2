@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -39,26 +41,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String jti = jwtTokenProvider.getJti(token);
 
                 if (redisBlacklistService.isBlacklisted(jti)) {
+                    log.warn("Blacklisted JWT detected, jti={}", jti);
                     writeUnauthorizedResponse(response, "JWT token has been logged out");
                     return;
                 }
 
-                if (token != null && jwtTokenProvider.validateToken(token)) {
-                    Long userId = jwtTokenProvider.getUserId(token);
-                    List<String> roles = jwtTokenProvider.getRoles(token);
-                     jti = jwtTokenProvider.getJti(token);
+                Long userId = jwtTokenProvider.getUserId(token);
+                List<String> roles = jwtTokenProvider.getRoles(token);
 
-                    AuthenticatedUserPrincipal principal = new AuthenticatedUserPrincipal(userId, roles, jti);
+                AuthenticatedUserPrincipal principal = new AuthenticatedUserPrincipal(userId, roles, jti);
 
-                    List<GrantedAuthority> authorities = roles.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toList());
+                List<GrantedAuthority> authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
             filterChain.doFilter(request, response);

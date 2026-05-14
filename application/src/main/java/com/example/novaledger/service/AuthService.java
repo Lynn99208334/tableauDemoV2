@@ -119,7 +119,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(accessToken, refreshToken, user.getUsername());
     }
 
     private String generateEmailVerifyToken() {
