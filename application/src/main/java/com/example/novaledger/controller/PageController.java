@@ -57,16 +57,6 @@ public class PageController {
         return "import";
     }
 
-    @GetMapping("/admin/banks")
-    public String adminBanksPage() {
-        return "admin/bankList";
-    }
-
-    @GetMapping("/admin/users")
-    public String adminUsersPage() {
-        return "admin/userList";
-    }
-
     @GetMapping("/verify-email-success")
     public String verifyEmailSuccess() {
         return "verify-email-success";
@@ -85,6 +75,16 @@ public class PageController {
     @GetMapping("/reset-password")
     public String resetPasswordPage() {
         return "reset-password";
+    }
+
+    @GetMapping("/report/monthly")
+    public String reportMonthlyPage() {
+        return "report-monthly";
+    }
+
+    @GetMapping("/report/yearly")
+    public String reportYearlyPage() {
+        return "report-yearly";
     }
 
     @GetMapping("/error/403")

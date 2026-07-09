@@ -41,6 +41,7 @@ public enum ErrorCode {
 
     ACCOUNT_DISABLED("AUTH_020", "Account Disabled", 403),
     ACCOUNT_NOT_ACTIVE("AUTH_021", "Account Not Active", 403),
+    REGISTRATION_DISABLED("AUTH_022", "Registration is currently disabled", 403),
 
     LOGIN_FAILED("AUTH_030", "Login Failed", 401),
     PASSWORD_INCORRECT("AUTH_032", "Password Incorrect", 401),
@@ -77,6 +78,7 @@ public enum ErrorCode {
     IMPORT_FILE_READ_FAILED("IMPORT_006", "Failed to read uploaded file", 500),
     IMPORT_JOB_NOT_FOUND("IMPORT_007", "Import job not found", 404),
     IMPORT_HTML_PARSE_FAILED("IMPORT_008", "Failed to parse HTML-based XLS file", 500),
+    IMPORT_ACCOUNT_MISMATCH("IMPORT_010", "Account number in file does not match the selected account", 400),
 
     // ========================
     // Transaction

@@ -14,14 +14,18 @@ import com.example.novaledger.auth.repository.UserRepository;
 import com.example.novaledger.auth.repository.UserTenantRepository;
 import com.example.novaledger.common.exception.BusinessException;
 import com.example.novaledger.common.exception.ErrorCode;
+import com.example.novaledger.common.logging.AuditAction;
 import com.example.novaledger.common.logging.AuditLog;
 import com.example.novaledger.common.logging.AuditType;
 import com.example.novaledger.common.service.SystemConfigService;
 import com.example.novaledger.common.tenant.AuthContext;
+import com.example.novaledger.common.util.TokenHashUtil;
 import com.example.novaledger.dto.AuthResponse;
 import com.example.novaledger.dto.LoginRequest;
 import com.example.novaledger.dto.RegisterSummary;
+import com.example.novaledger.finance.audit.service.AuditLogService;
 import com.example.novaledger.ratelimit.LoginRateLimiter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -47,6 +52,8 @@ public class AuthService {
     private final AuthContext authContext;
     private final SystemConfigService systemConfigService;
     private final LoginRateLimiter loginRateLimiter;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper;
 
     @org.springframework.beans.factory.annotation.Value("${app.base-url}")
     private String appBaseUrl;
@@ -61,7 +68,9 @@ public class AuthService {
             RoleRepository roleRepository,
             AuthContext authContext,
             SystemConfigService systemConfigService,
-            LoginRateLimiter loginRateLimiter) {
+            LoginRateLimiter loginRateLimiter,
+            AuditLogService auditLogService,
+            ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -72,11 +81,19 @@ public class AuthService {
         this.authContext = authContext;
         this.systemConfigService = systemConfigService;
         this.loginRateLimiter = loginRateLimiter;
+        this.auditLogService = auditLogService;
+        this.objectMapper = objectMapper;
     }
 
     @AuditLog(action = "REGISTER_USER", type = AuditType.CREATE)
     public RegisterSummary register(RegisterRequest request) {
         log.info("action=REGISTER email={}", request.getEmail());
+
+        boolean registrationEnabled = systemConfigService.getBoolean("registration.enabled");
+        if (!registrationEnabled) {
+            log.warn("action=REGISTER result=FAILED reason=REGISTRATION_DISABLED");
+            throw new BusinessException(ErrorCode.REGISTRATION_DISABLED);
+        }
 
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("action=REGISTER result=FAILED reason=EMAIL_ALREADY_EXISTS email={}", request.getEmail());
@@ -88,7 +105,8 @@ public class AuthService {
             throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
 
-        String verifyToken = generateEmailVerifyToken();
+        String rawToken = generateEmailVerifyToken();
+        String hashedToken = TokenHashUtil.hashToken(rawToken);
         LocalDateTime expiredAt = generateEmailVerifyExpiredAt();
 
         User user = new User();
@@ -98,7 +116,7 @@ public class AuthService {
         user.setStatus(UserStatus.REGISTERED);
         user.setEmailVerified(false);
         user.setEnabled(true);
-        user.setEmailVerifyToken(verifyToken);
+        user.setEmailVerifyToken(hashedToken);
         user.setEmailVerifyExpiredAt(expiredAt);
 
         User saved = userRepository.save(user);
@@ -129,7 +147,7 @@ public class AuthService {
         userTenant.setJoinedAt(LocalDateTime.now());
         userTenantRepository.save(userTenant);
 
-        String verifyLink = appBaseUrl + "/api/auth/verify-email?token=" + verifyToken;
+        String verifyLink = appBaseUrl + "/api/auth/verify-email?token=" + rawToken;
         emailService.sendVerifyEmail(saved.getEmail(), verifyLink);
 
         log.info("action=REGISTER result=SUCCESS userId={} tenantId={}", saved.getId(), savedTenant.getId());
@@ -139,7 +157,6 @@ public class AuthService {
     public AuthResponse login(LoginRequest request, HttpSession session, String ip) {
         log.info("action=LOGIN email={}", request.getEmail());
 
-        // 檢查是否已被鎖定
         if (loginRateLimiter.isBlocked(ip)) {
             log.warn("action=LOGIN result=BLOCKED ip={}", ip);
             throw new BusinessException(ErrorCode.LOGIN_BLOCKED);
@@ -164,7 +181,18 @@ public class AuthService {
             throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
 
-        // 登入成功，清除失敗計數
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            loginRateLimiter.recordFailure(ip);
+            log.warn("action=LOGIN result=FAILED reason=ACCOUNT_DISABLED userId={}", user.getId());
+            throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            loginRateLimiter.recordFailure(ip);
+            log.warn("action=LOGIN result=FAILED reason=ACCOUNT_NOT_ACTIVE userId={} status={}", user.getId(), user.getStatus());
+            throw new BusinessException(ErrorCode.ACCOUNT_NOT_ACTIVE);
+        }
+
         loginRateLimiter.clearFailures(ip);
 
         Long tenantId = userTenantRepository.findByUserId(user.getId())
@@ -178,11 +206,43 @@ public class AuthService {
         List<String> roles = Boolean.TRUE.equals(user.getSystemAdmin())
                 ? List.of("ROLE_ADMIN")
                 : List.of("ROLE_USER");
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), tenantId, roles);
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), tenantId, roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        // 手動寫入 Audit Log：LOGIN 無法透過 AOP 取得正確 userId，在此直接記錄
+        writeLoginAuditLog(user, tenantId, ip);
 
         log.info("action=LOGIN result=SUCCESS userId={} tenantId={}", user.getId(), tenantId);
         return new AuthResponse(accessToken, refreshToken, user.getUsername());
+    }
+
+    public void writeLoginAuditLog(User user, Long tenantId, String ip) {
+        try {
+            String afterValue = objectMapper.writeValueAsString(
+                    Map.of("username", user.getUsername(), "roles",
+                            Boolean.TRUE.equals(user.getSystemAdmin()) ? "ADMIN" : "MEMBER")
+            );
+            auditLogService.save(tenantId, user.getId(), AuditAction.LOGIN,
+                    "Auth", null, null, afterValue, ip);
+        } catch (Exception e) {
+            log.error("action=AUDIT_LOGIN_FAILED reason={}", e.getMessage());
+        }
+    }
+
+    public void writeLogoutAuditLog(String token, String ip) {
+        try {
+            Long userId = jwtTokenProvider.getUserId(token);
+            Long tenantId = jwtTokenProvider.getTenantId(token);
+            String username = jwtTokenProvider.getUsername(token);
+            String afterValue = objectMapper.writeValueAsString(
+                    Map.of("username", username)
+            );
+            auditLogService.save(tenantId, userId, AuditAction.LOGOUT,
+                    "Auth", null, null, afterValue, ip);
+        } catch (Exception e) {
+            log.error("action=AUDIT_LOGOUT_FAILED reason={}", e.getMessage());
+        }
     }
 
     private String generateEmailVerifyToken() {

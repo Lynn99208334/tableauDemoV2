@@ -1,18 +1,21 @@
-function fillLogin(email, password) {
-    document.getElementById("email").value = email;
-    document.getElementById("password").value = password;
-}
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    // 快捷填入按鈕
+    // 快捷填入（密碼存在 JS 裡，不放 HTML attribute）
+    const devAccounts = {
+        "admin@novaledger.dev": "password123",
+        "alice@novaledger.dev": "password123",
+        "bob@novaledger.dev":   "password123",
+        "son@novaledger.dev":   "password123"
+    };
+
     document.querySelectorAll("[data-fill-email]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-            fillLogin(btn.dataset.fillEmail, btn.dataset.fillPassword);
+            const email = btn.dataset.fillEmail;
+            document.getElementById("email").value = email;
+            document.getElementById("password").value = devAccounts[email] || "";
         });
     });
 
-    // 登入表單送出
     document.getElementById("loginForm").addEventListener("submit", async function (event) {
         event.preventDefault();
 
@@ -26,9 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const response = await fetch("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email, password: password })
             });
 
@@ -40,6 +41,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     loginError.textContent = "登入失敗次數過多，請 15 分鐘後再試。";
                 } else if (errorCode === "AUTH_001") {
                     loginError.textContent = "Email 尚未驗證，請先完成驗證。";
+                } else if (errorCode === "AUTH_020") {
+                    loginError.textContent = "此帳號已被停用，請聯繫管理員。";
+                } else if (errorCode === "AUTH_021") {
+                    loginError.textContent = "此帳號狀態異常，請聯繫管理員。";
                 } else {
                     loginError.textContent = "帳號或密碼錯誤。";
                 }
@@ -54,7 +59,14 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.setItem("refreshToken", data.refreshToken);
             localStorage.setItem("username", data.username);
 
-            window.location.href = "/page/dashboard";
+            const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+            const roles = payload.roles || [];
+
+            if (roles.includes("ROLE_ADMIN")) {
+                window.location.href = "/page/admin/dashboard";
+            } else {
+                window.location.href = "/page/dashboard";
+            }
 
         } catch (error) {
             console.error("Login failed", error);
