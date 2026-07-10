@@ -4,6 +4,7 @@ import com.example.novaledger.finance.account.entity.UserAccount;
 import com.example.novaledger.finance.account.repository.UserAccountRepository;
 import com.example.novaledger.common.exception.BusinessException;
 import com.example.novaledger.common.exception.ErrorCode;
+import com.example.novaledger.common.util.SensitiveDataMasker;
 import com.example.novaledger.common.logging.AuditLog;
 import com.example.novaledger.common.logging.AuditType;
 import com.example.novaledger.finance.enums.ImportStatus;
@@ -234,7 +235,7 @@ public class ImportService {
                                 ? account.getAccountNumber().replaceAll("[^0-9]", "") : "";
                         if (!fileAccountNumber.isEmpty() && !fileAccountNumber.equals(selectedAccountNumber)) {
                             log.warn("action=ACCOUNT_MISMATCH jobId={} fileAccount={} selectedAccount={}",
-                                    jobId, fileAccountNumber, account.getMaskedAccountNumber());
+                                    jobId, fileAccountNumber, SensitiveDataMasker.maskAccountNumber(account.getAccountNumber()));
                             job.setStatus("FAILED");
                             job.setFailReason("ACCOUNT_MISMATCH");
                             job.setFinishedAt(LocalDateTime.now());
@@ -243,8 +244,8 @@ public class ImportService {
                             mismatchLog.setTenantId(tenantId);
                             mismatchLog.setUploadJobId(jobId);
                             mismatchLog.setLogLevel("ERROR");
-                            mismatchLog.setMessage("帳號不符：檔案帳號（" + maskRaw(fileAccountNumber)
-                                    + "）與選定帳戶（" + account.getMaskedAccountNumber() + "）不符");
+                            mismatchLog.setMessage("帳號不符：檔案帳號（" + SensitiveDataMasker.maskAccountNumber(fileAccountNumber)
+                                    + "）與選定帳戶（" + SensitiveDataMasker.maskAccountNumber(account.getAccountNumber()) + "）不符");
                             importLogRepository.save(mismatchLog);
                             return;
                         }
@@ -348,11 +349,6 @@ public class ImportService {
             log.error("action=PROCESS_IMPORT_JOB result=FAILED jobId={} reason={}", jobId, e.getMessage(), e);
             importJobStatusService.markJobFailed(jobId, tenantId);
         }
-    }
-
-    private String maskRaw(String accountNumber) {
-        if (accountNumber == null || accountNumber.length() < 4) return accountNumber;
-        return "****" + accountNumber.substring(accountNumber.length() - 4);
     }
 
     private String calculateDedupKey(Long accountId, ParseResult result) {

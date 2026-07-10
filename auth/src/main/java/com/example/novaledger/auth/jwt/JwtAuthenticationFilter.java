@@ -31,6 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisBlacklistService redisBlacklistService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
     public static final String ACCESS_TOKEN_COOKIE = "access_token";
 
     @Override
@@ -52,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         log.warn("Blacklisted JWT detected, jti={}", jti);
                         // Cookie 來源的 blacklisted token：清除 cookie 並導回登入頁
                         if (isFromCookie(request)) {
-                            clearAccessTokenCookie(response);
+                            clearAccessTokenCookie(response, cookieSecure);
                             response.sendRedirect("/page/login");
                         } else {
                             writeUnauthorizedResponse(response, "JWT token has been logged out");
@@ -120,12 +123,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return bearer == null || !bearer.startsWith("Bearer ");
     }
 
-    public static void clearAccessTokenCookie(HttpServletResponse response) {
+    public static void clearAccessTokenCookie(HttpServletResponse response, boolean secure) {
         Cookie cookie = new Cookie(ACCESS_TOKEN_COOKIE, "");
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // dev 環境用 false，prod 改 true
+        cookie.setSecure(secure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);
     }
 

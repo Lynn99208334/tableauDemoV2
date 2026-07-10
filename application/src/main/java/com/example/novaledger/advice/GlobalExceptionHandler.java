@@ -83,9 +83,11 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest req
     ) {
+        // 完整 exception 只寫入 log（含 stack trace），對外 response 只回一致的通用訊息
+        // 避免 SQL exception 、NPE 等細節泄露 table / 欄位 / class path
         log.error("action=UNEXPECTED_ERROR uri={} reason={}", req.getRequestURI(), ex.getMessage(), ex);
 
-        ApiErrorResponse error = buildError(req, ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        ApiErrorResponse error = buildError(req, ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, null);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail(error));
     }
 }

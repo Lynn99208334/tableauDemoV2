@@ -64,7 +64,8 @@
                                     </div>
 
                                     <!-- 快捷填入按鈕：email 放 attribute，密碼在 login.js 的 map 裡 -->
-                                    <div class="mb-3 text-center">
+                                    <!-- 只在 dev profile 顯示，prod 不得泄露測試帳號 -->
+                                    <div class="mb-3 text-center" th:if="${@environment.acceptsProfiles('dev')}">
                                         <button type="button" class="btn btn-outline-light btn-sm m-1"
                                                 data-fill-email="admin@novaledger.dev">Admin</button>
                                         <button type="button" class="btn btn-outline-light btn-sm m-1"
