@@ -41,6 +41,9 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisBlacklistService redisBlacklistService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
     @PostMapping("/register")
     @Operation(summary = "註冊新帳號")
     public ResponseEntity<ApiResponse<Void>> register(
@@ -58,16 +61,17 @@ public class AuthController {
         AuthResponse authResponse = authService.login(request, session, ip);
 
         // 寫入 HttpOnly cookie，讓 Thymeleaf SSR 頁面的 JwtAuthenticationFilter 可以讀取
-        // SameSite=Strict 防 CSRF，HttpOnly 防 XSS
+        // SameSite=Strict 防 CSRF，HttpOnly 防 XSS，Secure 由 app.cookie.secure控制（dev false、prod true）
         // ⚑ 未來換 Vue 時：Vue 走 Authorization header，cookie 可保留或移除，兩者互不影響
         Cookie accessTokenCookie = new Cookie(
                 JwtAuthenticationFilter.ACCESS_TOKEN_COOKIE,
                 authResponse.getAccessToken()
         );
         accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(false); // dev 環境 false，prod 透過 application-prod.properties 覆蓋
+        accessTokenCookie.setSecure(cookieSecure);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(60 * 60 * 24); // 24 小時，與 JWT 有效期對齊
+        accessTokenCookie.setAttribute("SameSite", "Strict");
         httpResponse.addCookie(accessTokenCookie);
 
         return ResponseEntity.ok(authResponse);
@@ -84,7 +88,7 @@ public class AuthController {
         }
 
         // 無論 token 是否存在，都清除 cookie
-        JwtAuthenticationFilter.clearAccessTokenCookie(response);
+        JwtAuthenticationFilter.clearAccessTokenCookie(response, cookieSecure);
 
         if (token == null) {
             return ResponseEntity.badRequest()
