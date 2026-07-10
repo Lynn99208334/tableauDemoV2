@@ -14,7 +14,7 @@ import jakarta.mail.internet.MimeMessage;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.email.provider", havingValue = "smtp", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.email.provider", havingValue = "smtp")
 public class SmtpEmailSender implements EmailSender {
 
     private final JavaMailSender mailSender;

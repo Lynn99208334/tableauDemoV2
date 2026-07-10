@@ -2,6 +2,10 @@
 -- NovaLedger Seed Data
 -- Flyway Migration V12
 -- USERS + TENANTS（含 son）
+--
+-- Seed user password (all users share the same hash for demo simplicity):
+--   plaintext: password123
+--   algorithm: BCrypt cost 10
 -- ========================================
 
 SET NAMES utf8mb4;
@@ -22,7 +26,7 @@ INSERT INTO users (
 (
     'sys_admin',
     'admin@novaledger.dev',
-    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
+    '$2a$10$DNXaAiJM6ReHcq7bYQ.I3uUN37UfHYSIHHtKx9pOR2lrSktSFgO1K',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     TRUE, NULL,
@@ -32,7 +36,7 @@ INSERT INTO users (
 (
     'alice',
     'alice@novaledger.dev',
-    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
+    '$2a$10$DNXaAiJM6ReHcq7bYQ.I3uUN37UfHYSIHHtKx9pOR2lrSktSFgO1K',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     FALSE, NULL,
@@ -42,7 +46,7 @@ INSERT INTO users (
 (
     'bob',
     'bob@novaledger.dev',
-    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
+    '$2a$10$DNXaAiJM6ReHcq7bYQ.I3uUN37UfHYSIHHtKx9pOR2lrSktSFgO1K',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     FALSE, NULL,
@@ -52,7 +56,7 @@ INSERT INTO users (
 (
     'son',
     'son@novaledger.dev',
-    '$2a$10$8R0nwfQG.dSGE9UemN0JveorFQPg6QzlTyWg/WNFnnGQyi6eCgn4C',
+    '$2a$10$DNXaAiJM6ReHcq7bYQ.I3uUN37UfHYSIHHtKx9pOR2lrSktSFgO1K',
     TRUE, 'ACTIVE', TRUE, '2026-01-01 00:00:00',
     NULL, NULL, NULL,
     FALSE, NULL,

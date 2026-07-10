@@ -12,9 +12,9 @@ A multi-tenant personal finance SaaS application built with **Spring Boot 3.x Mo
 
 | Role | Email | Password |
 |------|-------|----------|
-| Member (Alice) | alice@example.com | demo1234 |
-| Member (Bob) | bob@example.com | demo1234 |
-| Admin | admin@example.com | admin1234 |
+| Member (Alice) | alice@novaledger.dev | password123 |
+| Member (Bob) | bob@novaledger.dev | password123 |
+| Admin | admin@novaledger.dev | password123 |
 
 API Documentation: `/swagger-ui.html`
 
